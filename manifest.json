@@ -2,7 +2,7 @@
   "name": "CRM Urdaibai",
   "short_name": "CRM Urdaibai",
   "description": "CRM Pipeline y Rutas para Urdaibai",
-  "start_url": "./crm_urdaibai_v2.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#fafaf7",
   "theme_color": "#2563eb",
