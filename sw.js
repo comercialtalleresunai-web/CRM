@@ -1,6 +1,6 @@
 const CACHE = 'crm-urdaibai-v1';
 const ASSETS = [
-  './crm_urdaibai_v2.html',
+  './index.html',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
