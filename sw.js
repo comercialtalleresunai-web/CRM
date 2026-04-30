@@ -2,6 +2,8 @@ const CACHE = 'crm-urdaibai-v1';
 const ASSETS = [
   './index.html',
   './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
@@ -23,8 +25,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Para peticiones a Google APIs siempre ir a red
-  if (e.request.url.includes('googleapis.com') || 
+  if (e.request.url.includes('googleapis.com') ||
       e.request.url.includes('accounts.google.com')) {
     e.respondWith(fetch(e.request));
     return;
