@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CRM Urdaibai">
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>CRM Urdaibai — Pipeline, Rutas & Captura</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf7; --surface: #ffffff; --card: #f4f4ef; --border: #e0e0d8;
+    --ink: #1a1a1a; --ink-soft: #555; --muted: #888;
+    --accent: #2563eb; --accent-soft: #dbeafe;
+    --lead: #16a34a; --prospect: #ca8a04; --propuesta: #ea580c;
+    --negociacion: #7c3aed; --cerrado: #059669; --perdido: #dc2626;
+    --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font); min-height: 100vh; }
+  nav {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface); position: sticky; top: 0; z-index: 100; flex-wrap: wrap;
+  }
+  .logo { font-weight: 800; font-size: 1.05rem; letter-spacing: -0.3px; }
+  .logo span { color: var(--accent); }
+  .nav-tabs { display: flex; gap: 3px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer;
+    font-family: var(--font); font-size: 0.8rem; font-weight: 600;
+    background: transparent; color: var(--muted); transition: all .2s;
+  }
+  .tab-btn.active { background: var(--ink); color: var(--surface); }
+  .tab-btn:hover:not(.active) { background: var(--card); color: var(--ink); }
+  .nav-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .nav-btn {
+    padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink); font-family: var(--font);
+    font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all .2s;
+  }
+  .nav-btn:hover { background: var(--card); }
+  .nav-btn.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+  .nav-btn.capture { background: #fef3c7; border-color: #fbbf24; color: #92400e; }
+  .view { display: none; padding: 20px; }
+  .view.active { display: block; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-bottom: 20px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .stat-label { font-size: 0.7rem; color: var(--muted); font-family: var(--mono); letter-spacing: .05em; margin-bottom: 4px; text-transform: uppercase; }
+  .stat-value { font-size: 1.5rem; font-weight: 800; }
+  .stat-value.accent { color: var(--accent); }
+  .kanban { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+  .column { min-width: 210px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .col-title { font-size: 0.75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .col-count { background: var(--card); border-radius: 20px; padding: 2px 8px; font-size: 0.7rem; font-family: var(--mono); }
+  .kcard { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 6px; cursor: grab; transition: all .15s; position: relative; overflow: hidden; user-select: none; }
+  .kcard::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+  .kcard:hover { border-color: var(--accent); background: var(--surface); }
+  .kcard.dragging { opacity: 0.4; cursor: grabbing; }
+  .column { transition: background .15s; }
+  .column.drag-over { background: var(--accent-soft); border-color: var(--accent); }
+  .kcard-name { font-size: 0.85rem; font-weight: 700; margin-bottom: 3px; }
+  .kcard-company { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-bottom: 6px; }
+  .kcard-meta { display: flex; justify-content: space-between; align-items: center; }
+  .kcard-value { font-size: 0.75rem; color: var(--accent); font-weight: 700; font-family: var(--mono); }
+  .kcard-date { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); }
+  .priority-tag { font-size: 0.62rem; font-family: var(--mono); padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
+  .p-alta { background: #fee2e2; color: #b91c1c; }
+  .p-media { background: #fef3c7; color: #92400e; }
+  .p-baja { background: #dcfce7; color: #166534; }
+  [data-stage="lead"] .kcard::before { background: var(--lead); }
+  [data-stage="prospect"] .kcard::before { background: var(--prospect); }
+  [data-stage="propuesta"] .kcard::before { background: var(--propuesta); }
+  [data-stage="negociacion"] .kcard::before { background: var(--negociacion); }
+  [data-stage="cerrado"] .kcard::before { background: var(--cerrado); }
+  [data-stage="perdido"] .kcard::before { background: var(--perdido); }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+  .search-input { flex: 1; min-width: 180px; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--mono); font-size: 0.8rem; outline: none; }
+  .search-input:focus { border-color: var(--accent); }
+  select.filter-sel { padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--font); font-size: 0.8rem; cursor: pointer; outline: none; }
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  thead th { text-align: left; padding: 10px 12px; font-family: var(--mono); font-size: 0.68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--card); }
+  tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; }
+  tbody tr:hover { background: var(--card); }
+  tbody td { padding: 10px 12px; }
+  .stage-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-family: var(--mono); padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .badge-lead { background: #dcfce7; color: #166534; }
+  .badge-prospect { background: #fef3c7; color: #92400e; }
+  .badge-propuesta { background: #fed7aa; color: #9a3412; }
+  .badge-negociacion { background: #ede9fe; color: #6b21a8; }
+  .badge-cerrado { background: #d1fae5; color: #065f46; }
+  .badge-perdido { background: #fee2e2; color: #991b1b; }
+  .ruta-container { display: grid; grid-template-columns: 1fr 280px; gap: 12px; height: calc(100vh - 160px); min-height: 500px; }
+  .ruta-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+  .ruta-panel-header { padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 2; flex-shrink: 0; }
+  .ruta-filters { padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 5px; flex-wrap: wrap; position: sticky; top: 41px; background: var(--surface); z-index: 2; flex-shrink: 0; }
+  .stage-chip { padding: 3px 10px; border-radius: 20px; border: 1.5px solid; font-family: var(--font); font-size: 0.68rem; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 4px; }
+  .chip-all { border-color: var(--border); color: var(--ink-soft); background: var(--card); }
+  .chip-all.on { border-color: var(--ink); background: var(--ink); color: white; }
+  .chip-lead { border-color: var(--lead); color: var(--lead); }
+  .chip-lead.on { background: var(--lead); color: white; }
+  .chip-prospect { border-color: var(--prospect); color: var(--prospect); }
+  .chip-prospect.on { background: var(--prospect); color: white; }
+  .chip-propuesta { border-color: var(--propuesta); color: var(--propuesta); }
+  .chip-propuesta.on { background: var(--propuesta); color: white; }
+  .chip-negociacion { border-color: var(--negociacion); color: var(--negociacion); }
+  .chip-negociacion.on { background: var(--negociacion); color: white; }
+  .chip-cerrado { border-color: var(--cerrado); color: var(--cerrado); }
+  .chip-cerrado.on { background: var(--cerrado); color: white; }
+  .ruta-bulk { padding: 6px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; font-size: 0.72rem; flex-shrink: 0; }
+  .ruta-bulk button { padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--card); font-family: var(--font); font-size: 0.7rem; cursor: pointer; }
+  .ruta-bulk button:hover { background: var(--border); }
+  .ruta-items-wrap { flex: 1; overflow-y: auto; }
+  .ruta-item { padding: 9px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 9px; cursor: pointer; transition: background .1s; }
+  .ruta-item:hover { background: var(--card); }
+  .ruta-item.in-ruta { background: #f0fdf4; }
+  .ruta-item.in-ruta:hover { background: #dcfce7; }
+  .ruta-item.excluded { opacity: 0.4; background: #fff5f5; }
+  .ruta-item.excluded:hover { background: #fee2e2; }
+  .excl-btn { width:18px; height:18px; border-radius:50%; border:1.5px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:0.6rem; flex-shrink:0; cursor:pointer; transition:all .1s; color:var(--muted); }
+  .excl-btn:hover { border-color:#dc2626; color:#dc2626; }
+  .ruta-item.excluded .excl-btn { background:#dc2626; border-color:#dc2626; color:white; }
+  .ruta-cb { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; transition: all .1s; background: var(--surface); }
+  .ruta-cb.checked { background: var(--accent); border-color: var(--accent); }
+  .ruta-cb.checked::after { content: '✓'; color: white; font-size: 0.68rem; font-weight: 800; }
+  .ruta-order { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-family: var(--mono); font-weight: 700; flex-shrink: 0; color: white; }
+  .ruta-info { flex: 1; min-width: 0; }
+  .ruta-name { font-size: 0.79rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ruta-addr { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #map { border-radius: 10px; border: 1px solid var(--border); }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 2000; align-items: center; justify-content: center; padding: 15px; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 720px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 1.05rem; font-weight: 800; }
+  .modal-close { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--ink); cursor: pointer; font-size: 1rem; }
+  .modal-body { padding: 16px 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.span2 { grid-column: span 2; }
+  label { font-size: 0.68rem; font-family: var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  input[type=text], input[type=email], input[type=tel], input[type=number], input[type=date], select.form-sel, textarea.form-area {
+    padding: 8px 11px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--font); font-size: 0.85rem; outline: none; width: 100%;
+  }
+  input:focus, select.form-sel:focus, textarea.form-area:focus { border-color: var(--accent); }
+  textarea.form-area { resize: vertical; min-height: 60px; }
+  .section-sep { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+  .section-label { font-size: 0.68rem; font-family: var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; font-weight: 700; }
+  .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; background: var(--card); border-radius: 0 0 12px 12px; }
+  .btn-cancel { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--font); font-size: 0.82rem; cursor: pointer; }
+  .btn-save { padding: 8px 22px; border-radius: 6px; border: none; background: var(--accent); color: var(--surface); font-family: var(--font); font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+  .btn-danger { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--perdido); background: var(--surface); color: var(--perdido); font-family: var(--font); font-size: 0.82rem; cursor: pointer; margin-right: auto; }
+  .capture-step { margin-bottom: 16px; }
+  .capture-drop { display: block; border: 2px dashed var(--border); border-radius: 10px; padding: 30px 20px; text-align: center; cursor: pointer; background: var(--card); }
+  .capture-drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .capture-drop.has-file { border-color: var(--cerrado); background: #d1fae5; }
+  .capture-preview { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 10px; }
+  .capture-notes-input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--font); font-size: 0.88rem; outline: none; min-height: 80px; resize: vertical; }
+  .ai-key-section { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.82rem; }
+  .ai-key-section input { width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid #d4a017; font-family: var(--mono); font-size: 0.8rem; margin-top: 6px; outline: none; }
+  .ai-status { padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.82rem; display: none; }
+  .ai-status.show { display: block; }
+  .ai-status.info { background: var(--accent-soft); color: #1e40af; }
+  .ai-status.success { background: #d1fae5; color: #065f46; }
+  .ai-status.error { background: #fee2e2; color: #991b1b; }
+  .activities { margin-top: 4px; }
+  .activity-item { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .activity-icon { width: 24px; height: 24px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; font-size: .75rem; flex-shrink: 0; }
+  .activity-text { font-size: 0.8rem; }
+  .activity-date { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); }
+  .add-activity { display: flex; gap: 6px; margin-top: 8px; }
+  .add-activity input { flex: 1; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 0.82rem; outline: none; }
+  .add-activity button { padding: 7px 12px; border-radius: 6px; border: none; cursor: pointer; background: var(--accent); color: white; font-size: 0.75rem; font-weight: 700; }
+  .empty { text-align: center; padding: 36px; color: var(--muted); font-size: 0.85rem; }
+  .empty div { font-size: 1.8rem; margin-bottom: 8px; }
+  .leaflet-popup-content-wrapper { background: var(--surface) !important; color: var(--ink) !important; border-radius: 8px !important; }
+  .leaflet-popup-tip { background: var(--surface) !important; }
+  .popup-name { font-size: 0.9rem; font-weight: 800; margin-bottom: 2px; }
+  .popup-town { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
+  @media (max-width: 700px) {
+    .ruta-container { grid-template-columns: 1fr; height: auto; }
+    .ruta-panel { max-height: 40vh; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.span2 { grid-column: span 1; }
+    .nav-btn { padding: 6px 10px; font-size: 0.74rem; }
+    .tab-btn { padding: 6px 10px; font-size: 0.76rem; }
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .drive-status { font-size:0.68rem; font-family:var(--mono); padding:3px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px; }
+  .drive-status.connected { background:#d1fae5; color:#065f46; }
+  .drive-status.disconnected { background:#fee2e2; color:#991b1b; }
+  .drive-status.syncing { background:#fef3c7; color:#92400e; }
+  .drive-status.saved { background:#d1fae5; color:#065f46; }
+  #unsaved-dot { width:7px;height:7px;border-radius:50%;background:#f59e0b;display:none;flex-shrink:0; }
+  select[multiple] { overflow-y: auto; border-radius: 6px; padding: 4px; }
+  select[multiple] option { padding: 4px 8px; border-radius: 4px; margin: 1px 0; }
+  select[multiple] option:checked { background: var(--accent); color: white; }
+  .comarca-hint { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); align-self: center; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">pipe<span>CRM</span></div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('funnel',event)">Funnel</button>
+    <button class="tab-btn" onclick="switchTab('clientes',event)">Clientes</button>
+    <button class="tab-btn" onclick="switchTab('rutas',event)">Mapa</button>
+  </div>
+  <div class="nav-actions">
+    <span id="db-indicator" style="font-size:0.68rem;color:var(--muted);font-family:var(--mono);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="Base de datos activa"></span>
+    <div id="unsaved-dot" title="Cambios sin guardar en Drive"></div>
+    <div id="drive-status-badge" class="drive-status disconnected" style="cursor:pointer;" onclick="handleDriveConnect()" title="Conectar con Google Drive">
+      <span id="drive-status-icon">☁️</span>
+      <span id="drive-status-text">Conectar Drive</span>
+    </div>
+    <button class="nav-btn capture" onclick="openCapture()">📸 Capturar</button>
+    <label class="nav-btn">📥 Importar<input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
+    <button class="nav-btn" onclick="importFromDrive()" title="Cargar datos desde Google Drive">☁️ Desde Drive</button>
+    <button class="nav-btn" onclick="exportExcel()">📤 Exportar</button>
+    <button class="nav-btn primary" onclick="openModal()">+ Nuevo</button>
+  </div>
+</nav>
+
+<div class="view active" id="view-funnel">
+  <div class="stats" id="stats-bar"></div>
+  <div style="padding:8px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);">
+    <input class="search-input" id="funnel-search" placeholder="🔍 Buscar en funnel…"
+           oninput="renderKanban()" style="max-width:240px;flex-shrink:0;">
+    <select class="filter-sel" id="funnel-comarca" multiple onchange="renderKanban()" style="max-width:180px;height:72px;" title="Ctrl+clic para varias comarcas">
+    </select>
+    <select class="filter-sel" id="funnel-tipo" onchange="renderKanban()" style="max-width:160px;">
+      <option value="">Todos los tipos</option>
+    </select>
+    <span id="funnel-match-info" style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);"></span>
+  </div>
+  <div class="kanban" id="kanban-board"></div>
+</div>
+
+<div class="view" id="view-clientes">
+  <div class="toolbar">
+    <input class="search-input" id="search-input" placeholder="Buscar…" oninput="renderTable()">
+    <select class="filter-sel" id="filter-stage" onchange="renderTable()">
+      <option value="">Todas etapas</option>
+      <option value="lead">Lead</option><option value="prospect">Prospect</option>
+      <option value="propuesta">Propuesta</option><option value="negociacion">Negociación</option>
+      <option value="cerrado">Cerrado</option><option value="perdido">Perdido</option>
+    </select>
+    <select class="filter-sel" id="filter-priority" onchange="renderTable()">
+      <option value="">Todas prior.</option>
+      <option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option>
+    </select>
+    <select class="filter-sel" id="filter-tipo" onchange="renderTable()">
+      <option value="">Todos tipos</option>
+    </select>
+
+    <select class="filter-sel" id="filter-comarca" multiple onchange="onComarcaFilterChange('clientes')" 
+      style="min-width:150px;height:72px;" title="Ctrl+clic para seleccionar varias comarcas">
+    </select>
+    <span class="comarca-hint">⌃ varias</span>
+    <select class="filter-sel" id="filter-municipio" onchange="renderTable()" style="min-width:150px;">
+      <option value="">Todos los municipios</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+  <th onclick="sortTable('nombre')" style="cursor:pointer;user-select:none;">Nombre <span id="sort-nombre"></span></th>
+  <th onclick="sortTable('empresa')" style="cursor:pointer;user-select:none;">Empresa <span id="sort-empresa"></span></th>
+  <th onclick="sortTable('telefono')" style="cursor:pointer;user-select:none;">Teléfono <span id="sort-telefono"></span></th>
+  <th onclick="sortTable('etapa')" style="cursor:pointer;user-select:none;">Etapa <span id="sort-etapa"></span></th>
+  <th onclick="sortTable('valor')" style="cursor:pointer;user-select:none;">Valor <span id="sort-valor"></span></th>
+  <th onclick="sortTable('prioridad')" style="cursor:pointer;user-select:none;">P. <span id="sort-prioridad"></span></th>
+  <th onclick="sortTable('poblacion')" style="cursor:pointer;user-select:none;">Población <span id="sort-poblacion"></span></th>
+  <th onclick="sortTable('comarca')" style="cursor:pointer;user-select:none;">Comarca <span id="sort-comarca"></span></th>
+  <th>Links</th>
+</tr></thead>
+      <tbody id="clientes-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="view" id="view-rutas">
+  <!-- Barra de filtros: controlan qué aparece en el mapa -->
+  <div class="toolbar" style="align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);">
+    <span style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);font-weight:700;">FILTRAR MAPA:</span>
+    <select class="filter-sel" id="map-filter-comarca" multiple onchange="onComarcaFilterChange('map')"
+      style="font-size:.72rem;height:72px;max-width:160px;" title="Ctrl+clic para seleccionar varias comarcas">
+    </select>
+    <select class="filter-sel" id="map-filter-municipio" onchange="refreshMapView()" style="font-size:.72rem;height:30px;max-width:160px;">
+      <option value="">Todos municipios</option>
+    </select>
+    <select class="filter-sel" id="map-filter-tipo" onchange="refreshMapView()" style="font-size:.72rem;height:30px;max-width:160px">
+      <option value="">Todos los tipos</option>
+    </select>
+
+    <div class="ruta-filters" style="margin:0;border:none;padding:0;gap:4px;">
+      <button class="stage-chip chip-all on" onclick="filterRutaStage('',this)">Todos</button>
+      <button class="stage-chip chip-lead" onclick="filterRutaStage('lead',this)">Lead</button>
+      <button class="stage-chip chip-prospect" onclick="filterRutaStage('prospect',this)">Prospect</button>
+      <button class="stage-chip chip-propuesta" onclick="filterRutaStage('propuesta',this)">Propuesta</button>
+      <button class="stage-chip chip-negociacion" onclick="filterRutaStage('negociacion',this)">Neg.</button>
+      <button class="stage-chip chip-cerrado" onclick="filterRutaStage('cerrado',this)">Cerrado</button>
+    </div>
+    <span id="map-count-info" style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);margin-left:4px;"></span>
+    <button onclick="resetExcluded()" style="margin-left:auto;font-size:0.72rem;color:#dc2626;border:1px solid #fca5a5;background:#fff5f5;padding:4px 10px;border-radius:5px;cursor:pointer;" title="Recuperar descartados del mapa">↩ Descartados</button>
+  </div>
+  <!-- Layout: mapa grande + panel ruta lateral -->
+  <div class="ruta-container">
+    <div id="map"></div>
+    <!-- Panel derecho: solo los que están EN RUTA -->
+    <div class="ruta-panel">
+      <div class="ruta-panel-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>🗺 Mi ruta</span>
+        <span id="ruta-total-count" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);">0 paradas</span>
+      </div>
+      <div style="padding:6px 10px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="selectNone()" style="font-size:0.7rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);">✗ Vaciar</button>
+        <button onclick="selectAllVisible()" style="font-size:0.7rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);">+ Añadir visibles</button>
+        <span id="ruta-selected-info" style="font-size:0.7rem;color:var(--muted);font-family:var(--mono);align-self:center;"></span>
+      </div>
+      <div class="ruta-items-wrap" id="ruta-list"></div>
+      <div style="padding:10px;border-top:1px solid var(--border);">
+        <button class="nav-btn primary" onclick="openGMapsRoute()" style="width:100%;justify-content:center;">🗺 Abrir en Google Maps</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Nuevo cliente</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="section-label">Contacto</p>
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="f-nombre"></div>
+        <div class="form-group"><label>Empresa</label><input type="text" id="f-empresa"></div>
+        <div class="form-group"><label>NIF / DNI</label><input type="text" id="f-nif" placeholder="B12345678 / 12345678A"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="f-email"></div>
+        <div class="form-group"><label>Teléfono 1</label><input type="tel" id="f-telefono"></div>
+        <div class="form-group"><label>Teléfono 2</label><input type="tel" id="f-telefono2"></div>
+        <div class="form-group"><label>Cargo</label><input type="text" id="f-cargo"></div>
+        <div class="form-group"><label>Web</label><input type="text" id="f-web"></div>
+      </div>
+      <hr class="section-sep">
+      <p class="section-label">Localización</p>
+      <div class="form-grid">
+        <div class="form-group span2"><label>Dirección</label><input type="text" id="f-direccion"></div>
+        <div class="form-group"><label>Población</label><input type="text" id="f-poblacion"></div>
+        <div class="form-group"><label>Provincia</label><input type="text" id="f-provincia"></div>
+        <div class="form-group"><label>CP</label><input type="text" id="f-cp"></div>
+        <div class="form-group"><label>Comarca</label><input type="text" id="f-comarca" list="comarca-options"><datalist id="comarca-options"><option value="Busturialdea-Urdaibai"><option value="Gran Bilbao"><option value="Uribe"><option value="Lea-Artibai"><option value="Duranguesado"><option value="Arratia-Nervión"><option value="Las Encartaciones"></datalist></div>
+        <div class="form-group"><label>Latitud</label><input type="number" id="f-lat" step="any"></div>
+        <div class="form-group"><label>Longitud</label><input type="number" id="f-lng" step="any"></div>
+      </div>
+      <hr class="section-sep">
+      <p class="section-label">Establecimiento</p>
+      <div class="form-grid">
+        <div class="form-group span2"><label>Tipo de establecimiento</label>
+          <input type="text" id="f-tipo_alojamiento" list="tipo-options" placeholder="Agroturismo, Hotel, Restaurante…">
+          <datalist id="tipo-options">
+            <option value="Agroturismo"><option value="Casa Rural"><option value="Hotel Rural">
+            <option value="Hotel"><option value="Hostal"><option value="Apartamento Rural">
+            <option value="Restaurante"><option value="Bar-Restaurante"><option value="Sidería">
+            <option value="Camping"><option value="Albergue"><option value="Balneario">
+          </datalist>
+        </div>
+        <div class="form-group"><label>Capacidad (plazas)</label><input type="number" id="f-capacidad"></div>
+        <div class="form-group"><label>Categoría / Estrellas</label><input type="text" id="f-categoria"></div>
+      </div>
+      <hr class="section-sep">
+      <p class="section-label">Pipeline</p>
+      <div class="form-grid">
+        <div class="form-group"><label>Etapa *</label>
+          <select class="form-sel" id="f-etapa">
+            <option value="lead">Lead</option><option value="prospect">Prospect</option>
+            <option value="propuesta">Propuesta</option><option value="negociacion">Negociación</option>
+            <option value="cerrado">Cerrado</option><option value="perdido">Perdido</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Prioridad</label>
+          <select class="form-sel" id="f-prioridad">
+            <option value="media">Media</option><option value="alta">Alta</option><option value="baja">Baja</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Valor (€)</label><input type="number" id="f-valor"></div>
+        <div class="form-group"><label>Prob %</label><input type="number" id="f-prob" min="0" max="100"></div>
+        <div class="form-group"><label>Próximo contacto</label><input type="date" id="f-siguiente"></div>
+        <div class="form-group"><label>Origen</label>
+          <select class="form-sel" id="f-origen">
+            <option value="">—</option><option value="web">Web</option><option value="referido">Referido</option>
+            <option value="visita">Visita</option><option value="llamada">Llamada</option>
+            <option value="email">Email</option><option value="otro">Otro</option>
+          </select>
+        </div>
+      </div>
+      <hr class="section-sep">
+      <p class="section-label">Notas</p>
+      <div class="form-grid full">
+        <div class="form-group"><textarea class="form-area" id="f-notas"></textarea></div>
+      </div>
+      <hr class="section-sep">
+      <p class="section-label">Actividad</p>
+      <div id="activity-log" class="activities"></div>
+      <div class="add-activity">
+        <input type="text" id="new-activity" placeholder="Registrar actividad…">
+        <button onclick="addActivity()">+ Añadir</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="btn-delete" onclick="deleteClient()" style="display:none">Eliminar</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveClient()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAPTURA -->
+<div class="overlay" id="capture-overlay" onclick="closeCaptureOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📸 Captura rápida con IA</div>
+      <button class="modal-close" onclick="closeCapture()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="ai-key-section" id="ai-key-section">
+        <strong>🔑 Configura tu API Key de Anthropic</strong><br>
+        <span style="color:#78350f">Se guarda solo en este navegador. Obtén una en console.anthropic.com</span>
+        <input type="password" id="ai-key-input" placeholder="sk-ant-..." onchange="saveApiKey()">
+      </div>
+
+      <div class="capture-step">
+        <p class="section-label">1. Foto opcional</p>
+        <label class="capture-drop" id="capture-drop-label">
+          <input type="file" id="capture-photo" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+          <div id="capture-drop-content">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.5">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <div style="margin-top:8px">Toca para hacer foto o subir imagen</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="capture-step">
+        <p class="section-label">2. Qué ha pasado (opcional)</p>
+        <textarea class="capture-notes-input" id="capture-notes" placeholder="Ej: Hablé con Antón de Ozollo Bekoa, quiere presupuesto robot piscina + mantenimiento 3000m2, prefiere renting."></textarea>
+      </div>
+
+      <button class="btn-save" style="width:100%;padding:12px;font-size:0.9rem;" onclick="processCapture()">
+        ✨ Extraer datos con Claude
+      </button>
+
+      <div class="ai-status" id="ai-status"></div>
+
+      <div id="ai-result" style="display:none;margin-top:14px;">
+        <hr class="section-sep">
+        <p class="section-label">Datos extraídos — revisa antes de guardar</p>
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre contacto</label><input type="text" id="ai-nombre"></div>
+          <div class="form-group"><label>Empresa</label><input type="text" id="ai-empresa"></div>
+          <div class="form-group"><label>Teléfono</label><input type="tel" id="ai-telefono"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="ai-email"></div>
+          <div class="form-group"><label>Población</label><input type="text" id="ai-poblacion"></div>
+          <div class="form-group"><label>Etapa</label>
+            <select class="form-sel" id="ai-etapa">
+              <option value="lead">Lead</option><option value="prospect">Prospect</option>
+              <option value="propuesta">Propuesta</option><option value="negociacion">Negociación</option>
+              <option value="cerrado">Cerrado</option>
+            </select>
+          </div>
+          <div class="form-group span2"><label>Resumen/Notas</label><textarea class="form-area" id="ai-notas"></textarea></div>
+          <div class="form-group span2"><label>Actividad</label><input type="text" id="ai-actividad"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn-cancel" onclick="closeCapture()" style="flex:1">Cancelar</button>
+          <button class="btn-save" onclick="saveCapture()" style="flex:2">💾 Guardar como nuevo</button>
+        </div>
+        <div style="margin-top:8px;font-size:0.75rem;color:var(--muted);text-align:center;">
+          O <button style="background:none;border:none;color:var(--accent);cursor:pointer;text-decoration:underline;font-family:var(--font);font-size:0.75rem;" onclick="mergeCapture()">añadir a cliente existente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'pipecrm_clients_v2';
+const KEY_API = 'pipecrm_anthropic_key';
+let clients = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+let editingId = null;
+let capturePhoto = null;
+const stages = ['lead','prospect','propuesta','negociacion','cerrado','perdido'];
+const stageLabels = {lead:'Lead',prospect:'Prospect',propuesta:'Propuesta',negociacion:'Negociación',cerrado:'Cerrado',perdido:'Perdido'};
+const stageColors = {lead:'#16a34a',prospect:'#ca8a04',propuesta:'#ea580c',negociacion:'#7c3aed',cerrado:'#059669',perdido:'#dc2626'};
+
+function save() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(clients));
+  markUnsaved();
+  // Debounce: esperar 800ms tras el último cambio antes de subir a Drive
+  clearTimeout(save._driveTimer);
+  save._driveTimer = setTimeout(() => autoSaveToDrive(), 800);
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function switchTab(tab, ev) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  if(ev) ev.target.classList.add('active');
+  if(tab==='funnel') renderKanban();
+  if(tab==='clientes') renderTable();
+  if(tab==='rutas') { populateFilters(); renderRutas(); setTimeout(initMap, 50); }
+}
+
+function renderStats() {
+  const bar = document.getElementById('stats-bar');
+  const total = clients.length;
+  const cerrados = clients.filter(c=>c.etapa==='cerrado').length;
+  const pipeline = clients.filter(c=>!['cerrado','perdido'].includes(c.etapa));
+  const valorPipe = pipeline.reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const valorCerrado = clients.filter(c=>c.etapa==='cerrado').reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const hoy = new Date().toISOString().slice(0,10);
+  const pendientes = clients.filter(c=>c.siguiente && c.siguiente<=hoy).length;
+  bar.innerHTML = `
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-value accent">${total}</div></div>
+    <div class="stat"><div class="stat-label">Pipeline</div><div class="stat-value">${pipeline.length}</div></div>
+    <div class="stat"><div class="stat-label">Valor pipeline</div><div class="stat-value accent">${valorPipe.toLocaleString('es-ES')}€</div></div>
+    <div class="stat"><div class="stat-label">Cerrados</div><div class="stat-value">${cerrados}</div></div>
+    <div class="stat"><div class="stat-label">Facturado</div><div class="stat-value accent">${valorCerrado.toLocaleString('es-ES')}€</div></div>
+    <div class="stat"><div class="stat-label">Hoy</div><div class="stat-value" style="${pendientes>0?'color:var(--propuesta)':''}">${pendientes}</div></div>
+  `;
+}
+
+let dragId = null;
+
+function renderKanban() {
+  renderStats();
+  // Populate funnel dropdowns
+  const fcSel = document.getElementById('funnel-comarca');
+  const ftSel = document.getElementById('funnel-tipo');
+  if(fcSel && fcSel.options.length === 0) {
+    const cs = new Set(clients.map(c=>c.comarca).filter(Boolean));
+    COMARCAS_ORDER.filter(c=>cs.has(c)).forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; fcSel.appendChild(o); });
+    [...cs].filter(c=>!COMARCAS_ORDER.includes(c)).sort().forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; fcSel.appendChild(o); });
+  }
+  if(ftSel && ftSel.options.length <= 1) {
+    [...new Set(clients.map(c=>c.tipo_alojamiento).filter(Boolean))].sort().forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; ftSel.appendChild(o); });
+  }
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = '';
+  stages.forEach(stage => {
+    const fq = (document.getElementById('funnel-search')||{value:''}).value.toLowerCase();
+    const fcSel2 = document.getElementById('funnel-comarca');
+    const fc = fcSel2 ? [...fcSel2.selectedOptions].map(o=>o.value).filter(Boolean) : [];
+    const ft = (document.getElementById('funnel-tipo')||{value:''}).value;
+    const cards = clients.filter(c => {
+      if(c.etapa !== stage) return false;
+      if(fq && ![c.nombre,c.empresa,c.telefono,c.poblacion].join(' ').toLowerCase().includes(fq)) return false;
+      if(fc.length>0 && !fc.includes((c.comarca||'').trim())) return false;
+      if(ft && (c.tipo_alojamiento||'').trim() !== ft) return false;
+      return true;
+    });
+    const col = document.createElement('div');
+    col.className = 'column';
+    col.setAttribute('data-stage', stage);
+    col.innerHTML = `<div class="col-header">
+      <span class="col-title" style="color:${stageColors[stage]}">${stageLabels[stage]}</span>
+      <span class="col-count">${cards.length}</span></div>`;
+    if(cards.length===0) col.innerHTML += `<div style="color:var(--muted);font-size:0.7rem;padding:8px 0;text-align:center;font-family:var(--mono);">—</div>`;
+
+    // Drop zone events on column
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); });
+    col.addEventListener('dragleave', e => { if(!col.contains(e.relatedTarget)) col.classList.remove('drag-over'); });
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      if(!dragId) return;
+      const c = clients.find(x=>x.id===dragId);
+      if(c && c.etapa !== stage) {
+        c.etapa = stage;
+        save();
+        renderKanban();
+        renderTable();
+      }
+      dragId = null;
+    });
+
+    cards.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'kcard';
+      card.draggable = true;
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;gap:6px;">
+          <div class="kcard-name">${c.nombre}</div>
+          <span class="priority-tag p-${c.prioridad||'media'}">${c.prioridad||'m'}</span></div>
+        <div class="kcard-company">${c.empresa||'—'}${c.tipo_alojamiento?' · <span style="color:var(--muted);font-size:0.68rem;">'+c.tipo_alojamiento+'</span>':''}</div>
+        <div class="kcard-meta">
+          <span class="kcard-value">${c.valor?parseFloat(c.valor).toLocaleString('es-ES')+'€':''}</span>
+          <span class="kcard-date">${c.siguiente||''}</span></div>`;
+      // Drag events
+      card.addEventListener('dragstart', e => {
+        dragId = c.id;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        document.querySelectorAll('.column').forEach(col => col.classList.remove('drag-over'));
+        dragId = null;
+      });
+      // Click to open modal (only if not drag)
+      card.addEventListener('click', () => openModal(c.id));
+      col.appendChild(card);
+    });
+    board.appendChild(col);
+  });
+  // Show match count if filtering
+  const fq2 = (document.getElementById('funnel-search')||{value:''}).value;
+  const fcSel3 = document.getElementById('funnel-comarca');
+  const fc2Arr = fcSel3 ? [...fcSel3.selectedOptions].map(o=>o.value).filter(Boolean) : [];
+  const ft2 = (document.getElementById('funnel-tipo')||{value:''}).value;
+  const info = document.getElementById('funnel-match-info');
+  if(info) {
+    if(fq2||fc2Arr.length>0||ft2) {
+      const total = clients.reduce((n,c) => {
+        const match = !fq2 || [c.nombre,c.empresa,c.telefono,c.poblacion].join(' ').toLowerCase().includes(fq2.toLowerCase());
+        return n + (match && (fc2Arr.length===0||fc2Arr.includes((c.comarca||'').trim())) && (!ft2||(c.tipo_alojamiento||'').trim()===ft2) ? 1 : 0);
+      }, 0);
+      info.textContent = `${total} resultado${total!==1?'s':''}`;
+    } else { info.textContent = ''; }
+  }
+}
+
+
+// ── Comarca map (auto-asignado por municipio) ────────────────────────────────
+const COMARCA_MAP = {
+  // Gran Bilbao
+  'bilbao':'Gran Bilbao','barakaldo':'Gran Bilbao','getxo':'Gran Bilbao','santurtzi':'Gran Bilbao',
+  'portugalete':'Gran Bilbao','basauri':'Gran Bilbao','leioa':'Gran Bilbao','derio':'Gran Bilbao',
+  'erandio':'Gran Bilbao','sestao':'Gran Bilbao','ortuella':'Gran Bilbao','zaratamo':'Gran Bilbao',
+  'zamudio':'Gran Bilbao','berango':'Gran Bilbao','larrabetzu':'Gran Bilbao','laukiz':'Gran Bilbao',
+  'arrigorriaga':'Gran Bilbao','sondika':'Gran Bilbao','galdakao':'Gran Bilbao','bedia':'Gran Bilbao',
+  'gamiz-fika':'Gran Bilbao','lemoa':'Gran Bilbao',
+  // Busturialdea-Urdaibai
+  'bermeo':'Busturialdea-Urdaibai','gernika-lumo':'Busturialdea-Urdaibai','gernika':'Busturialdea-Urdaibai',
+  'mundaka':'Busturialdea-Urdaibai','busturia':'Busturialdea-Urdaibai','elantxobe':'Busturialdea-Urdaibai',
+  'forua':'Busturialdea-Urdaibai','ea':'Busturialdea-Urdaibai','morga':'Busturialdea-Urdaibai',
+  'kortezubi':'Busturialdea-Urdaibai','murueta':'Busturialdea-Urdaibai','sukarrieta':'Busturialdea-Urdaibai',
+  'ibarrangelu':'Busturialdea-Urdaibai','arrieta':'Busturialdea-Urdaibai','ereño':'Busturialdea-Urdaibai',
+  'errigoiti':'Busturialdea-Urdaibai','gautegiz-arteaga':'Busturialdea-Urdaibai',
+  'gautegiz arteaga':'Busturialdea-Urdaibai','muxika':'Busturialdea-Urdaibai',
+  'ajangiz':'Busturialdea-Urdaibai','urdaibai':'Busturialdea-Urdaibai',
+  'natxitua':'Busturialdea-Urdaibai','zelaieta':'Busturialdea-Urdaibai','munitibar':'Busturialdea-Urdaibai',
+  'munitibar-arbatzegi gerrikaitz':'Busturialdea-Urdaibai',
+  // Uribe
+  'bakio':'Uribe','sopelana':'Uribe','plentzia':'Uribe','gorliz':'Uribe','urduliz':'Uribe',
+  'meñaka':'Uribe','mungia':'Uribe','lemoiz':'Uribe','maruri-jatabe':'Uribe','gatika':'Uribe',
+  // Lea-Artibai
+  'lekeitio':'Lea-Artibai','ondarroa':'Lea-Artibai','markina-xemein':'Lea-Artibai',
+  'berriatua':'Lea-Artibai','ispaster':'Lea-Artibai','gizaburuaga':'Lea-Artibai',
+  'mendexa':'Lea-Artibai','etxebarria':'Lea-Artibai','ziortza-bolibar':'Lea-Artibai',
+  'aulesti':'Lea-Artibai',
+  // Duranguesado
+  'durango':'Duranguesado','abadiño':'Duranguesado','amorebieta-etxano':'Duranguesado',
+  'berriz':'Duranguesado','elorrio':'Duranguesado','mañaria':'Duranguesado',
+  'zaldibar':'Duranguesado','iurreta':'Duranguesado','otxandio':'Duranguesado',
+  'atxondo':'Duranguesado','garai':'Duranguesado','izurtza':'Duranguesado',
+  'mallabia':'Duranguesado','ermua':'Duranguesado',
+  // Arratia-Nervión
+  'arakaldo':'Arratia-Nervión','arantzazu':'Arratia-Nervión','zeberio':'Arratia-Nervión',
+  'dima':'Arratia-Nervión','orozko':'Arratia-Nervión','ubide':'Arratia-Nervión',
+  'igorre':'Arratia-Nervión','arrankudiaga':'Arratia-Nervión','arrankudiaga-zollo':'Arratia-Nervión',
+  'artea':'Arratia-Nervión','zeanuri':'Arratia-Nervión','areatza':'Arratia-Nervión',
+  // Las Encartaciones
+  'balmaseda':'Las Encartaciones','zalla':'Las Encartaciones','güeñes':'Las Encartaciones',
+  'galdames':'Las Encartaciones','sopuerta':'Las Encartaciones','artzentales':'Las Encartaciones',
+  'karrantza harana':'Las Encartaciones','trucios-turtzioz':'Las Encartaciones',
+  'gordexola':'Las Encartaciones','muskiz':'Las Encartaciones','lanestosa':'Las Encartaciones',
+  'maruri':'Las Encartaciones',
+};
+
+function getComarca(poblacion) {
+  if(!poblacion) return '';
+  return COMARCA_MAP[poblacion.toLowerCase().trim()] || '';
+}
+
+// Auto-assign comarca to any client missing it
+// ── Comarca ↔ Municipio linked filters ──────────────────────────────────────
+
+// Build reverse map: comarca → [municipios]
+function getComarcaMunicipios(comarcas) {
+  if(!comarcas || comarcas.length === 0) return null; // null = all municipios
+  const result = new Set();
+  Object.entries(COMARCA_MAP).forEach(([muni, comarca]) => {
+    if(comarcas.includes(comarca)) result.add(muni);
+  });
+  return result;
+}
+
+function updateMunicipioDropdowns() {
+  // Get currently selected comarcas from both contexts
+  const updateSel = (comarcaSel, municipioSel, onChangeFn) => {
+    if(!comarcaSel || !municipioSel) return;
+    const selectedComarcas = [...comarcaSel.selectedOptions].map(o=>o.value).filter(Boolean);
+    const prevMuni = municipioSel.value;
+
+    // Collect municipios that exist in data AND match selected comarcas
+    const matchingMunis = new Set();
+    clients.forEach(c => {
+      if(!c.poblacion) return;
+      if(selectedComarcas.length === 0 || selectedComarcas.includes(c.comarca||'')) {
+        matchingMunis.add(c.poblacion.trim());
+      }
+    });
+    const sorted = [...matchingMunis].sort((a,b)=>a.localeCompare(b,'es'));
+    municipioSel.innerHTML = '<option value="">Todos los municipios</option>' +
+      sorted.map(m => `<option value="${m}"${m===prevMuni?' selected':''}>${m}</option>`).join('');
+  };
+
+  updateSel(
+    document.getElementById('filter-comarca'),
+    document.getElementById('filter-municipio')
+  );
+  updateSel(
+    document.getElementById('map-filter-comarca'),
+    document.getElementById('map-filter-municipio')
+  );
+}
+
+function onComarcaFilterChange(context) {
+  updateMunicipioDropdowns();
+  if(context === 'clientes') renderTable();
+  if(context === 'map') refreshMapView();
+}
+
+// ── Web links in table open in new tab ──────────────────────────────────────
+function openWeb(url, event) {
+  event.stopPropagation();
+  event.preventDefault();
+  if(!url) return;
+  const href = url.startsWith('http') ? url : 'https://' + url;
+  window.open(href, '_blank', 'noopener,noreferrer');
+}
+
+function openGMapsLocation(lat, lng, nombre, event) {
+  event.stopPropagation();
+  event.preventDefault();
+  if(!lat || !lng) return;
+  // Google Maps satellite view centrado en las coordenadas, con Street View disponible
+  const url = `https://www.google.com/maps?q=${lat},${lng}&ll=${lat},${lng}&z=19&t=k`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function ensureComarcas() {
+  let changed = false;
+  clients.forEach(c => {
+    if(!c.comarca && c.poblacion) {
+      const cc = getComarca(c.poblacion);
+      if(cc) { c.comarca = cc; changed = true; }
+    }
+  });
+  if(changed) save();
+}
+
+const COMARCAS_ORDER = ['Gran Bilbao','Busturialdea-Urdaibai','Uribe','Lea-Artibai','Duranguesado','Arratia-Nervión','Las Encartaciones'];
+
+function populateFilters() {
+  const tiposSet = new Set();
+  const locSet = new Set();
+  const comarcaSet = new Set();
+  clients.forEach(c => {
+    if(c.tipo_alojamiento && c.tipo_alojamiento.trim()) tiposSet.add(c.tipo_alojamiento.trim());
+    if(c.poblacion && c.poblacion.trim()) locSet.add(c.poblacion.trim());
+    if(c.comarca && c.comarca.trim()) comarcaSet.add(c.comarca.trim());
+  });
+  const tipos = [...tiposSet].sort();
+  const locs = [...locSet].sort();
+  const comarcas = COMARCAS_ORDER.filter(c => comarcaSet.has(c));
+  [...comarcaSet].sort().forEach(c => { if(!comarcas.includes(c)) comarcas.push(c); });
+
+  [document.getElementById('filter-tipo'), document.getElementById('map-filter-tipo')].forEach(sel => {
+    if(!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Todos los tipos</option>' +
+      tipos.map(t => `<option value="${t}"${t===prev?' selected':''}>${t}</option>`).join('');
+  });
+  // Comarcas multi-select: preservar selección actual
+  [document.getElementById('filter-comarca'), document.getElementById('map-filter-comarca')].forEach(sel => {
+    if(!sel) return;
+    const prevSelected = [...sel.selectedOptions].map(o=>o.value).filter(Boolean);
+    sel.innerHTML = comarcas.map(c => `<option value="${c}"${prevSelected.includes(c)?' selected':''}>${c}</option>`).join('');
+  });
+  // Municipios: se populan dinámicamente según comarca seleccionada
+  updateMunicipioDropdowns();
+}
+
+function sortTable(col) {
+  if(tableSort.col === col) tableSort.dir *= -1;
+  else { tableSort.col = col; tableSort.dir = 1; }
+  // Update arrows
+  document.querySelectorAll('thead th span').forEach(s => s.textContent = '');
+  const el = document.getElementById('sort-'+col);
+  if(el) el.textContent = tableSort.dir === 1 ? ' ▲' : ' ▼';
+  renderTable();
+}
+
+function renderTable() {
+  populateFilters();
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const fs = document.getElementById('filter-stage').value;
+  const fp = document.getElementById('filter-priority').value;
+  const ft = document.getElementById('filter-tipo').value;
+  const fl = (document.getElementById('filter-municipio')||{value:''}).value;
+  const fcSel = document.getElementById('filter-comarca');
+  const fcArr = fcSel ? [...fcSel.selectedOptions].map(o=>o.value).filter(Boolean) : [];
+  let filtered = clients.filter(c => {
+    const match = [c.nombre,c.empresa,c.email,c.telefono,c.poblacion].join(' ').toLowerCase().includes(q);
+    const matchTipo   = !ft || (c.tipo_alojamiento||'').trim() === ft;
+    const matchLoc    = !fl || (c.poblacion||'').trim() === fl;
+    const matchComarca = fcArr.length===0 || fcArr.includes((c.comarca||'').trim());
+    return match && (!fs||c.etapa===fs) && (!fp||c.prioridad===fp) && matchTipo && matchLoc && matchComarca;
+  });
+  // Apply sort
+  if(tableSort.col) {
+    const col = tableSort.col;
+    const dir = tableSort.dir;
+    const priorityOrder = {alta:0, media:1, baja:2};
+    const stageOrder = {lead:0, prospect:1, propuesta:2, negociacion:3, cerrado:4, perdido:5};
+    filtered.sort((a,b) => {
+      let va = a[col]||'', vb = b[col]||'';
+      if(col==='valor'||col==='prob') { va=parseFloat(va)||0; vb=parseFloat(vb)||0; return (va-vb)*dir; }
+      if(col==='prioridad') { return (priorityOrder[va]??9 - priorityOrder[vb]??9)*dir; }
+      if(col==='etapa') { return ((stageOrder[va]??9)-(stageOrder[vb]??9))*dir; }
+      return va.toString().localeCompare(vb.toString(), 'es')*dir;
+    });
+  }
+  const tbody = document.getElementById('clientes-tbody');
+  if(!filtered.length) { tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div>📋</div>Sin resultados</div></td></tr>`; return; }
+  tbody.innerHTML = filtered.map(c => {
+    const webUrl = c.web ? (c.web.startsWith('http') ? c.web : 'https://'+c.web) : '';
+    const mapsUrl = (c.lat && c.lng) ? 'https://www.google.com/maps?q='+c.lat+','+c.lng+'&ll='+c.lat+','+c.lng+'&z=19&t=k' : '';
+    const webLink = webUrl ? '<a href="'+webUrl+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="text-decoration:none;margin-right:6px;font-size:1rem;" title="Abrir web">🌐</a>' : '<span style="color:var(--border);">—</span>';
+    const mapsLink = mapsUrl ? '<a href="'+mapsUrl+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="text-decoration:none;font-size:1rem;" title="Ver en Google Maps satélite">🛰️</a>' : '';
+    const tel2 = c.telefono2 ? '<br><span style="color:var(--muted);font-size:0.72rem;">'+c.telefono2+'</span>' : '';
+    return '<tr data-id="'+c.id+'" onclick="openModal(this.dataset.id)">'
+      +'<td><strong>'+c.nombre+'</strong></td>'
+      +'<td>'+(c.empresa||'—')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:0.78rem;">'+(c.telefono||'—')+tel2+'</td>'
+      +'<td><span class="stage-badge badge-'+c.etapa+'">'+stageLabels[c.etapa]+'</span></td>'
+      +'<td style="font-family:var(--mono);font-size:0.78rem;">'+(c.valor?parseFloat(c.valor).toLocaleString('es-ES')+'€':'—')+'</td>'
+      +'<td><span class="priority-tag p-'+(c.prioridad||'media')+'">'+(c.prioridad||'m')+'</span></td>'
+      +'<td style="font-size:0.78rem;">'+(c.poblacion||'—')+'</td>'
+      +'<td style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);">'+(c.comarca||'')+'</td>'
+      +'<td style="font-size:0.9rem;white-space:nowrap;">'+webLink+mapsLink+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+let tableSort = {col: null, dir: 1}; // col = field name, dir = 1 asc / -1 desc
+let mapInstance = null;
+let mapMarkers = [];
+let rutaSelected = new Set(); // IDs seleccionados para la ruta
+let rutaExcluded = new Set(); // IDs excluidos del mapa (sin jardín etc)
+let rutaFilterStage = '';     // filtro activo en panel izquierdo
+
+function toggleExclude(id) {
+  if(rutaExcluded.has(id)) rutaExcluded.delete(id);
+  else { rutaExcluded.add(id); rutaSelected.delete(id); } // si excluyes, quita de ruta
+  refreshMapView();
+}
+
+function initMap() {
+  const el = document.getElementById('map'); if(!el) return;
+  if(mapInstance) { mapInstance.invalidateSize(); refreshMapMarkers(); return; }
+  mapInstance = L.map('map').setView([43.355, -2.650], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(mapInstance);
+  // Marcar cuando el usuario interactúa (mueve/zoom) para preservar su vista
+  mapInstance.on('movestart zoomstart', function(e) {
+    if(e.originalEvent) mapInstance._userHasInteracted = true;
+  });
+  refreshMapMarkers();
+}
+
+function refreshMapMarkers() {
+  if(!mapInstance) return;
+  // Guardar vista actual antes de actualizar marcadores
+  const currentZoom = mapInstance.getZoom();
+  const currentCenter = mapInstance.getCenter();
+  const hasUserInteracted = mapInstance._userHasInteracted || false;
+  mapMarkers.forEach(m => mapInstance.removeLayer(m));
+  mapMarkers = [];
+  // Solo mostrar en mapa los que tienen coordenadas Y están seleccionados para ruta
+  // Si no hay ninguno seleccionado, mostrar todos con coordenadas (modo exploración)
+  const withCoords = clients.filter(c => c.lat && c.lng && c.etapa !== 'perdido');
+  const mft = (document.getElementById('map-filter-tipo')||{value:''}).value;
+  const mfl = (document.getElementById('map-filter-municipio')||{value:''}).value;
+  const mfcSel2 = document.getElementById('map-filter-comarca');
+  const mfcArr2 = mfcSel2 ? [...mfcSel2.selectedOptions].map(o=>o.value).filter(Boolean) : [];
+  const applyMapFilters = arr => arr.filter(c => {
+    if(mft && (c.tipo_alojamiento||'').trim() !== mft) return false;
+    if(mfl && (c.poblacion||'').trim() !== mfl) return false;
+    if(mfcArr2.length>0 && !mfcArr2.includes((c.comarca||'').trim())) return false;
+    return true;
+  });
+  // Show all filtered clients (not excluded) — selection only affects marker style
+  const notExcluded = withCoords.filter(c => !rutaExcluded.has(c.id));
+  const toShow = applyMapFilters(notExcluded);
+
+  toShow.forEach((c, i) => {
+    const color = stageColors[c.etapa] || '#555';
+    const inRuta = rutaSelected.has(c.id);
+    const label = rutaSelected.size > 0 && inRuta ? `${i+1}` : '';
+    // All markers visible; selected ones show order number and bold ring
+    const icon = L.divIcon({
+      className:'', iconSize:[inRuta?30:24,inRuta?30:24], iconAnchor:[inRuta?15:12,inRuta?15:12],
+      html: `<svg width="${inRuta?30:24}" height="${inRuta?30:24}" viewBox="0 0 30 30">
+        <circle cx="15" cy="15" r="13" fill="${color}" stroke="${inRuta?'#fff':'rgba(255,255,255,0.6)'}" stroke-width="${inRuta?3:1.5}" opacity="${inRuta?1:0.75}"/>
+        ${inRuta ? `<text x="15" y="19" text-anchor="middle" fill="white" font-size="10" font-weight="800" font-family="monospace">${[...rutaSelected].indexOf(c.id)+1}</text>` : `<circle cx="15" cy="15" r="4" fill="rgba(255,255,255,0.5)"/>`}
+      </svg>`
+    });
+    const m = L.marker([c.lat, c.lng], {icon}).addTo(mapInstance);
+    const popWebUrl = c.web ? (c.web.startsWith('http') ? c.web : 'https://'+c.web) : '';
+    const popMapsUrl = 'https://www.google.com/maps?q='+c.lat+','+c.lng+'&ll='+c.lat+','+c.lng+'&z=19&t=k';
+    const popWebBtn = popWebUrl
+      ? '<a href="'+popWebUrl+'" target="_blank" rel="noopener noreferrer" style="flex:1;min-width:70px;padding:5px 8px;border-radius:5px;border:1px solid #2563eb;background:#dbeafe;color:#1e40af;font-size:0.72rem;font-weight:700;text-decoration:none;text-align:center;display:inline-block;">&#127760; Web</a>'
+      : '';
+    const popMapsBtn = '<a href="'+popMapsUrl+'" target="_blank" rel="noopener noreferrer" style="flex:1;min-width:70px;padding:5px 8px;border-radius:5px;border:1px solid #16a34a;background:#dcfce7;color:#166534;font-size:0.72rem;font-weight:700;text-decoration:none;text-align:center;display:inline-block;">&#128752; Sat&#233;lite</a>';
+    const popTelHtml = c.telefono ? '<span style="font-size:0.72rem;color:#555;font-family:monospace;">'+c.telefono+'</span>' : '';
+    const popTipoHtml = c.tipo_alojamiento ? ' &middot; '+c.tipo_alojamiento : '';
+    const popRutaBg = inRuta ? '#fee2e2' : '#f4f4ef';
+    const popRutaBorder = inRuta ? '#dc2626' : '#ccc';
+    const popRutaColor = inRuta ? '#dc2626' : '#555';
+    const popRutaLabel = inRuta ? '&#10007; Quitar' : '&#10003; Ruta';
+    const popupHtml = '<div data-cid="'+c.id+'" style="min-width:200px;">'
+      + '<div class="popup-name">'+c.nombre+'</div>'
+      + '<div class="popup-town">&#128205; '+(c.poblacion||'&mdash;')+popTipoHtml+'</div>'
+      + '<div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+        + '<span class="stage-badge badge-'+c.etapa+'">'+stageLabels[c.etapa]+'</span>'
+        + popTelHtml
+      + '</div>'
+      + '<div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;">'
+        + popWebBtn + popMapsBtn
+      + '</div>'
+      + '<div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">'
+        + '<button class="ruta-btn" onclick="popupToggleRuta(this)" style="flex:1;padding:5px 8px;border-radius:5px;border:1.5px solid;cursor:pointer;font-size:0.72rem;font-weight:700;background:'+popRutaBg+';border-color:'+popRutaBorder+';color:'+popRutaColor+';">'
+          + popRutaLabel
+        + '</button>'
+        + '<button onclick="popupOpenModal(this)" style="flex:1;padding:5px 8px;border-radius:5px;border:1px solid #ccc;cursor:pointer;font-size:0.72rem;background:#fff;color:#333;">&#128203; Ficha</button>'
+      + '</div>'
+      + '<div style="margin-top:5px;text-align:right;">'
+        + '<button onclick="popupExclude(this)" style="font-size:0.65rem;padding:2px 6px;border:none;background:none;color:#aaa;cursor:pointer;">&#10005; Descartar</button>'
+      + '</div>'
+    + '</div>';
+    m.bindPopup(popupHtml);
+    mapMarkers.push(m);
+  });
+
+  if(toShow.length > 0) {
+    if(!hasUserInteracted) {
+      mapInstance.fitBounds(toShow.map(c=>[c.lat,c.lng]), {padding:[30,30], maxZoom: 13});
+    }
+    // Si ya interactuó, restaurar vista
+    // (los marcadores ya se han añadido, el zoom se mantiene solo)
+  }
+}
+
+function filterRutaStage(stage, btn) {
+  rutaFilterStage = stage;
+  document.querySelectorAll('.stage-chip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderRutas();
+}
+
+function popupGetId(btn) {
+  return btn.closest('[data-cid]').dataset.cid;
+}
+function popupToggleRuta(btn) {
+  const id = popupGetId(btn);
+  toggleRuta(id);
+  const inR = rutaSelected.has(id);
+  btn.textContent = inR ? '✗ Quitar' : '✓ Ruta';
+  btn.style.background = inR ? '#fee2e2' : '#f4f4ef';
+  btn.style.borderColor = inR ? '#dc2626' : '#ccc';
+  btn.style.color = inR ? '#dc2626' : '#555';
+}
+function popupOpenModal(btn) {
+  openModal(popupGetId(btn));
+}
+function popupExclude(btn) {
+  const id = popupGetId(btn);
+  toggleExclude(id);
+  btn.closest('.leaflet-popup').querySelector('.leaflet-popup-close-button').click();
+}
+
+function toggleRuta(id) {
+  if(rutaSelected.has(id)) rutaSelected.delete(id);
+  else rutaSelected.add(id);
+  refreshMapView();
+}
+
+function selectAllVisible() {
+  const visible = getVisibleClients();
+  visible.forEach(c => rutaSelected.add(c.id));
+  renderRutas(); refreshMapMarkers();
+}
+
+function selectNone() {
+  rutaSelected.clear();
+  refreshMapView();
+}
+
+function resetExcluded() {
+  rutaExcluded.clear();
+  refreshMapView();
+}
+
+function selectByStage() {
+  // Toggle: si todos los visibles están seleccionados, deselecciona; si no, selecciona
+  const visible = getVisibleClients();
+  const allSelected = visible.every(c => rutaSelected.has(c.id));
+  visible.forEach(c => allSelected ? rutaSelected.delete(c.id) : rutaSelected.add(c.id));
+  renderRutas(); refreshMapMarkers();
+}
+
+function getVisibleClients() {
+  const mft = (document.getElementById('map-filter-tipo')||{value:''}).value;
+  const mfl = (document.getElementById('map-filter-municipio')||{value:''}).value;
+  const mfcSel = document.getElementById('map-filter-comarca');
+  const mfcArr = mfcSel ? [...mfcSel.selectedOptions].map(o=>o.value).filter(Boolean) : [];
+  return clients.filter(c => {
+    if(c.etapa === 'perdido') return false;
+    if(rutaFilterStage && c.etapa !== rutaFilterStage) return false;
+    if(!(c.lat && c.lng || c.direccion || c.poblacion)) return false;
+    if(mft && (c.tipo_alojamiento||'').trim() !== mft) return false;
+    if(mfl && (c.poblacion||'').trim() !== mfl) return false;
+    if(mfcArr.length>0 && !mfcArr.includes((c.comarca||'').trim())) return false;
+    return true;
+  });
+}
+
+function renderRutas() {
+  const visible = getVisibleClients();
+  const totalSelected = rutaSelected.size;
+
+  // Counters
+  document.getElementById('ruta-total-count').textContent = totalSelected + ' parada' + (totalSelected!==1?'s':'');
+  document.getElementById('ruta-selected-info').textContent = totalSelected > 0 ? `· ${visible.length} en lista` : '';
+  const mapCountEl = document.getElementById('map-count-info');
+  if(mapCountEl) mapCountEl.textContent = visible.length + ' visibles';
+
+  const list = document.getElementById('ruta-list');
+  if(!visible.length) {
+    list.innerHTML = `<div class="empty" style="padding:30px 14px;text-align:center;color:var(--muted);font-size:0.8rem;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🔍</div>
+      Sin resultados — ajusta los filtros
+    </div>`;
+    return;
+  }
+
+  // Order: selected (in order) → unselected → excluded
+  const selectedIds = [...rutaSelected];
+  const inRutaList  = selectedIds.map(id => clients.find(c=>c.id===id)).filter(Boolean);
+  const notSelected = visible.filter(c => !rutaSelected.has(c.id) && !rutaExcluded.has(c.id));
+  const excluded    = visible.filter(c => rutaExcluded.has(c.id));
+  const ordered     = [...inRutaList, ...notSelected, ...excluded];
+
+  list.innerHTML = ordered.map((c, i) => {
+    const inRuta  = rutaSelected.has(c.id);
+    const isExcl  = rutaExcluded.has(c.id);
+    const pos     = inRuta ? selectedIds.indexOf(c.id) + 1 : null;
+    const color   = stageColors[c.etapa] || '#555';
+    const rowBg   = inRuta ? '#f0fdf4' : isExcl ? '#fff5f5' : 'transparent';
+    const rowOp   = isExcl ? '0.5' : '1';
+    return `
+    <div class="ruta-item ${inRuta?'in-ruta':''}" onclick="if(!event.target.closest('a')&&!event.target.closest('button')) toggleRuta('${c.id}')"
+         style="opacity:${rowOp};background:${rowBg};cursor:pointer;">
+      ${inRuta
+        ? '<div class="ruta-order" style="background:'+color+';flex-shrink:0;">'+pos+'</div>'
+        : '<div style="width:20px;height:20px;border-radius:50%;background:'+color+';opacity:0.25;flex-shrink:0;"></div>'
+      }
+      <div class="ruta-info" style="flex:1;min-width:0;">
+        <div class="ruta-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.nombre}</div>
+        <div style="font-size:0.72rem;color:var(--muted);display:flex;gap:5px;align-items:center;">
+          <span style="color:${color};font-weight:700;text-transform:uppercase;font-size:0.62rem;">${stageLabels[c.etapa]}</span>
+          <span>${c.poblacion||'—'}</span>
+          ${c.tipo_alojamiento ? '<span style="opacity:.7">'+c.tipo_alojamiento+'</span>' : ''}
+        </div>
+        ${c.telefono ? '<div style="font-size:0.7rem;color:var(--muted);font-family:var(--mono);">'+c.telefono+'</div>' : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
+        <button onclick="openModal('${c.id}')" title="Abrir ficha"
+          style="font-size:0.65rem;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface);cursor:pointer;">📋</button>
+        ${c.web ? '<a href="'+(c.web.startsWith('http')?c.web:'https://'+c.web)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Abrir web" style="font-size:0.65rem;padding:2px 5px;border:1px solid #bfdbfe;border-radius:4px;background:#eff6ff;color:#1d4ed8;text-decoration:none;text-align:center;display:block;">🌐</a>' : ''}
+        ${(c.lat && c.lng) ? '<a href="https://www.google.com/maps?q='+c.lat+','+c.lng+'&ll='+c.lat+','+c.lng+'&z=19&t=k" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Ver satélite Google Maps" style="font-size:0.65rem;padding:2px 5px;border:1px solid #bbf7d0;border-radius:4px;background:#f0fdf4;color:#15803d;text-decoration:none;text-align:center;display:block;">🛰️</a>' : ''}
+        <button onclick="toggleExclude('${c.id}')" title="${isExcl?'Recuperar':'Descartar del mapa'}"
+          style="font-size:0.65rem;padding:2px 5px;border:1px solid ${isExcl?'#16a34a':'#fca5a5'};border-radius:4px;background:${isExcl?'#f0fdf4':'#fff5f5'};color:${isExcl?'#16a34a':'#dc2626'};cursor:pointer;">${isExcl?'↩':'✕'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Actualiza lista Y mapa sin bucle infinito
+function refreshMapView() {
+  renderRutas();
+  refreshMapMarkers();
+}
+
+function focusClient(id) {
+  const c = clients.find(x=>x.id===id); if(!c) return;
+  if(c.lat && c.lng && mapInstance) {
+    mapInstance.flyTo([c.lat, c.lng], 15);
+    const m = mapMarkers.find(x => Math.abs(x.getLatLng().lat-c.lat)<0.0001);
+    if(m) m.openPopup();
+  } else openModal(id);
+}
+
+function openGMapsRoute() {
+  if(rutaSelected.size === 0) {
+    alert('Selecciona al menos un cliente marcando las casillas del panel izquierdo.');
+    return;
+  }
+  // Mantener orden de selección
+  const ordered = [...rutaSelected]
+    .map(id => clients.find(c => c.id === id))
+    .filter(c => c && (c.lat && c.lng || c.direccion || c.poblacion));
+  if(!ordered.length) { alert('Los clientes seleccionados no tienen dirección ni coordenadas.'); return; }
+  const stops = ordered.map(c => c.lat && c.lng
+    ? `${c.lat},${c.lng}`
+    : encodeURIComponent([c.direccion,c.poblacion,c.provincia,c.pais].filter(Boolean).join(', '))
+  );
+  const url = stops.length===1
+    ? `https://www.google.com/maps/dir/?api=1&destination=${stops[0]}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${stops[stops.length-1]}&waypoints=${stops.slice(0,-1).join('|')}`;
+  window.open(url,'_blank');
+}
+
+function openModal(id) {
+  editingId = id || null;
+  const c = id ? clients.find(x=>x.id===id) : null;
+  document.getElementById('modal-title').textContent = c ? 'Editar cliente' : 'Nuevo cliente';
+  document.getElementById('btn-delete').style.display = c ? 'block' : 'none';
+  ['nombre','empresa','nif','email','telefono','telefono2','cargo','web','direccion','poblacion','provincia','cp','comarca','lat','lng','tipo_alojamiento','capacidad','categoria','etapa','prioridad','valor','siguiente','origen','prob','notas'].forEach(f => {
+    const el = document.getElementById('f-'+f);
+    if(el) el.value = c ? (c[f]||'') : (f==='etapa'?'lead':f==='prioridad'?'media':'');
+  });
+  renderActivityLog(c ? (c.activities||[]) : []);
+  document.getElementById('new-activity').value = '';
+  document.getElementById('activity-log')._pending = [];
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); editingId=null; }
+function closeModalOutside(e) { if(e.target.id==='modal-overlay') closeModal(); }
+
+function renderActivityLog(acts) {
+  const icons = {llamada:'📞',reunión:'🤝',reunion:'🤝',email:'✉️',visita:'🚗',default:'📌'};
+  const log = document.getElementById('activity-log');
+  if(!acts.length) { log.innerHTML = `<div style="color:var(--muted);font-size:0.78rem;padding:4px 0;">Sin actividad.</div>`; return; }
+  log.innerHTML = acts.slice().reverse().map(a => {
+    const key = Object.keys(icons).find(k=>a.text.toLowerCase().includes(k))||'default';
+    return `<div class="activity-item"><div class="activity-icon">${icons[key]}</div>
+      <div><div class="activity-text">${a.text}</div><div class="activity-date">${a.date}</div></div></div>`;
+  }).join('');
+}
+
+function addActivity() {
+  const input = document.getElementById('new-activity');
+  const text = input.value.trim(); if(!text) return;
+  const act = { text, date: new Date().toLocaleDateString('es-ES'), id: uid() };
+  if(editingId) {
+    const c = clients.find(x=>x.id===editingId);
+    if(c) { c.activities = c.activities||[]; c.activities.push(act); save(); renderActivityLog(c.activities); }
+  } else {
+    const tmp = document.getElementById('activity-log');
+    tmp._pending = tmp._pending||[]; tmp._pending.push(act);
+    renderActivityLog([...(tmp._pending)]);
+  }
+  input.value='';
+}
+
+function saveClient() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if(!nombre) { alert('Nombre obligatorio'); return; }
+  const data = {};
+  ['nombre','empresa','nif','email','telefono','telefono2','cargo','web','direccion','poblacion','provincia','cp','comarca','tipo_alojamiento','capacidad','categoria','etapa','prioridad','valor','siguiente','origen','notas'].forEach(f => data[f] = document.getElementById('f-'+f).value.trim() || '');
+  data.lat = parseFloat(document.getElementById('f-lat').value)||null;
+  data.lng = parseFloat(document.getElementById('f-lng').value)||null;
+  data.prob = parseInt(document.getElementById('f-prob').value)||null;
+  data.valor = parseFloat(data.valor)||null;
+  const pending = document.getElementById('activity-log')._pending || [];
+  if(editingId) {
+    const idx = clients.findIndex(x=>x.id===editingId);
+    clients[idx] = { ...clients[idx], ...data };
+    if(pending.length) clients[idx].activities = [...(clients[idx].activities||[]), ...pending];
+  } else {
+    data.id = uid(); data.created = new Date().toLocaleDateString('es-ES'); data.activities = pending;
+    clients.push(data);
+  }
+  save(); closeModal(); renderKanban(); renderTable(); renderRutas();
+  if(mapInstance) refreshMapMarkers();
+}
+
+function deleteClient() {
+  if(!editingId || !confirm('¿Eliminar?')) return;
+  clients = clients.filter(c=>c.id!==editingId);
+  save(); closeModal(); renderKanban(); renderTable(); renderRutas();
+  if(mapInstance) refreshMapMarkers();
+}
+
+function importExcel(input) {
+  const file = input.files[0]; if(!file) return;
+  // Save filename for display
+  localStorage.setItem('pipecrm_db_name', file.name);
+  updateDbIndicator();
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+      let dataStart = 2;
+      for(let i=0;i<Math.min(5,rows.length);i++) if(rows[i].join('|').toLowerCase().includes('nombre')){ dataStart=i+1; break; }
+      const K = ['id','nombre','empresa','email','telefono','cargo','web','direccion','poblacion','provincia','cp','pais','lat','lng','etapa','prioridad','valor','prob','origen','siguiente','notas','created','_la','tipo_alojamiento','categoria','zona_marca','capacidad','sala_reuniones','restaurante','surfing','calidad_q','accesible','buenas_practicas','signatura_turismo','url_turismo','comarca'];
+      let imp=0, upd=0;
+      for(let r=dataStart;r<rows.length;r++){
+        const row = rows[r]; if(!row[1] && !row[0]) continue;
+        const obj = {};
+        K.forEach((k,i) => {
+          let v = row[i];
+          // Excel date serials are numbers ~40000-50000; convert to string date
+          if(typeof v === 'number' && v > 10000 && v < 100000 && (k==='created'||k==='siguiente'||k==='_la')) {
+            const d = XLSX.SSF.parse_date_code(v);
+            v = d ? `${String(d.d).padStart(2,'0')}/${String(d.m).padStart(2,'0')}/${d.y}` : v;
+          }
+          obj[k] = (v||'').toString().trim();
+        });
+        obj.lat = parseFloat(obj.lat)||null; obj.lng = parseFloat(obj.lng)||null;
+        obj.valor = parseFloat(obj.valor)||null; obj.prob = parseInt(obj.prob)||null;
+        if(!obj.nombre) continue;
+        const existing = clients.find(c => (obj.id && c.id===obj.id) || (c.nombre.toLowerCase()===obj.nombre.toLowerCase() && (c.empresa||'').toLowerCase()===(obj.empresa||'').toLowerCase()));
+        if(existing){ Object.assign(existing, obj); if(!existing.id) existing.id = uid(); upd++; }
+        else { if(!obj.id) obj.id = uid(); obj.activities = []; clients.push(obj); imp++; }
+      }
+      save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable(); renderRutas();
+      alert(`✅ ${imp} nuevos · ${upd} actualizados`);
+    } catch(err) { alert('Error: '+err.message); }
+    input.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+  const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','',''];
+  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.'];
+  const data = clients.map(c => [c.id||'',c.nombre||'',c.empresa||'',c.nif||'',c.email||'',c.telefono||'',c.telefono2||'',c.cargo||'',c.web||'',c.direccion||'',c.poblacion||'',c.provincia||'',c.cp||'',c.pais||'',c.lat||'',c.lng||'',c.etapa||'',c.prioridad||'',c.valor||'',c.prob||'',c.origen||'',c.siguiente||'',c.notas||'',c.created||'',(c.activities&&c.activities.length?c.activities[c.activities.length-1].date:'')]);
+  const ws = XLSX.utils.aoa_to_sheet([section,header,...data]);
+  ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:8}},{s:{r:0,c:9},e:{r:0,c:15}},{s:{r:0,c:16},e:{r:0,c:21}},{s:{r:0,c:22},e:{r:0,c:24}}];
+  ws['!cols'] = header.map((_,i)=>({wch:[5,25,25,25,14,18,22,28,14,12,8,8,10,10,12,10,14,10,14,14,30,12,14][i]||14}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  XLSX.writeFile(wb, `CRM_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// CAPTURA IA
+function openCapture() {
+  const k = localStorage.getItem(KEY_API) || '';
+  document.getElementById('ai-key-input').value = k;
+  document.getElementById('ai-key-section').style.display = k ? 'none' : 'block';
+  document.getElementById('capture-photo').value = '';
+  document.getElementById('capture-notes').value = '';
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-status').className = 'ai-status';
+  document.getElementById('capture-drop-content').innerHTML = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><div style="margin-top:8px">Toca para hacer foto o subir imagen</div>`;
+  document.getElementById('capture-drop-label').classList.remove('has-file');
+  capturePhoto = null;
+  document.getElementById('capture-overlay').classList.add('open');
+}
+function closeCapture() { document.getElementById('capture-overlay').classList.remove('open'); }
+function closeCaptureOutside(e) { if(e.target.id==='capture-overlay') closeCapture(); }
+
+function saveApiKey() {
+  const k = document.getElementById('ai-key-input').value.trim();
+  if(k) { localStorage.setItem(KEY_API, k); document.getElementById('ai-key-section').style.display = 'none'; }
+}
+
+function handlePhoto(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    capturePhoto = e.target.result;
+    document.getElementById('capture-drop-content').innerHTML = `<img src="${capturePhoto}" class="capture-preview"><div style="margin-top:8px;font-size:0.82rem;color:var(--cerrado)">✓ Foto lista — toca para cambiar</div>`;
+    document.getElementById('capture-drop-label').classList.add('has-file');
+  };
+  reader.readAsDataURL(file);
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('ai-status');
+  el.textContent = msg;
+  el.className = 'ai-status show ' + type;
+}
+
+async function processCapture() {
+  const apiKey = localStorage.getItem(KEY_API);
+  if(!apiKey) { alert('Configura tu API Key primero'); return; }
+  const notes = document.getElementById('capture-notes').value.trim();
+  if(!capturePhoto && !notes) { alert('Añade foto o escribe algo'); return; }
+
+  showStatus('⏳ Analizando con Claude...', 'info');
+  const existingNames = clients.map(c => `${c.nombre}${c.empresa?' ('+c.empresa+')':''}`).slice(0, 60).join(', ');
+  const prompt = `Eres un asistente comercial. Analiza la imagen y/o notas del comercial y extrae los datos del cliente.
+
+Clientes existentes en el CRM (referencia para detectar duplicados): ${existingNames || 'ninguno'}.
+
+Notas del comercial: "${notes || '(sin notas, solo imagen)'}".
+
+Devuelve SOLO JSON válido con esta estructura exacta, sin markdown:
+{
+  "nombre": "nombre del contacto o persona",
+  "empresa": "nombre de la empresa/establecimiento",
+  "telefono": "teléfono si aparece",
+  "email": "email si aparece",
+  "poblacion": "ciudad o pueblo",
+  "etapa_sugerida": "lead|prospect|propuesta|negociacion|cerrado",
+  "resumen": "resumen breve de una o dos frases",
+  "actividad": "frase corta para log de actividad tipo 'Visita - pide presupuesto X'",
+  "posible_duplicado": "nombre del cliente existente si ya está en el CRM, o vacío"
+}
+
+Si un campo no aparece, devuelve "". Etapa: pide presupuesto→propuesta, contacto inicial→lead, negociación avanzada→negociacion.`;
+
+  try {
+    const content = [{type:'text', text: prompt}];
+    if(capturePhoto) {
+      const [meta, b64] = capturePhoto.split(',');
+      const mediaType = meta.match(/data:([^;]+)/)[1];
+      content.unshift({type:'image', source: {type:'base64', media_type: mediaType, data: b64}});
+    }
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{role:'user', content}] })
+    });
+    if(!resp.ok) { const err = await resp.text(); throw new Error('API '+resp.status+': '+err.slice(0,200)); }
+    const result = await resp.json();
+    const text = result.content.find(c=>c.type==='text').text;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('No se pudo extraer JSON');
+    const parsed = JSON.parse(jsonMatch[0]);
+    document.getElementById('ai-nombre').value = parsed.nombre || '';
+    document.getElementById('ai-empresa').value = parsed.empresa || '';
+    document.getElementById('ai-telefono').value = parsed.telefono || '';
+    document.getElementById('ai-email').value = parsed.email || '';
+    document.getElementById('ai-poblacion').value = parsed.poblacion || '';
+    document.getElementById('ai-etapa').value = parsed.etapa_sugerida || 'lead';
+    document.getElementById('ai-notas').value = parsed.resumen || '';
+    document.getElementById('ai-actividad').value = parsed.actividad || '';
+    let msg = '✅ Datos extraídos. Revisa y guarda.';
+    if(parsed.posible_duplicado) msg += ` ⚠️ Posible duplicado: ${parsed.posible_duplicado}`;
+    showStatus(msg, parsed.posible_duplicado ? 'info' : 'success');
+    document.getElementById('ai-result').style.display = 'block';
+  } catch(err) { showStatus('❌ Error: ' + err.message, 'error'); }
+}
+
+function saveCapture() {
+  const nombre = document.getElementById('ai-nombre').value.trim();
+  const empresa = document.getElementById('ai-empresa').value.trim();
+  if(!nombre && !empresa) { alert('Se necesita nombre o empresa'); return; }
+  const actividad = document.getElementById('ai-actividad').value.trim();
+  const c = {
+    id: uid(), nombre: nombre || empresa, empresa,
+    telefono: document.getElementById('ai-telefono').value.trim(),
+    email: document.getElementById('ai-email').value.trim(),
+    poblacion: document.getElementById('ai-poblacion').value.trim(),
+    provincia: '', pais: 'España', cp: '', direccion: '', cargo: '', web: '',
+    lat: null, lng: null,
+    etapa: document.getElementById('ai-etapa').value,
+    prioridad: 'media', valor: null, prob: null, origen: 'visita', siguiente: '',
+    notas: document.getElementById('ai-notas').value.trim(),
+    created: new Date().toLocaleDateString('es-ES'),
+    activities: actividad ? [{ text: actividad, date: new Date().toLocaleDateString('es-ES'), id: uid() }] : []
+  };
+  clients.push(c); save(); closeCapture();
+  renderKanban(); renderTable(); renderRutas();
+  alert(`✅ "${c.nombre}" añadido al CRM`);
+}
+
+function mergeCapture() {
+  const nombre = document.getElementById('ai-nombre').value.trim().toLowerCase();
+  const empresa = document.getElementById('ai-empresa').value.trim().toLowerCase();
+  const matches = clients.filter(c =>
+    (nombre && c.nombre.toLowerCase().includes(nombre)) ||
+    (empresa && (c.empresa||'').toLowerCase().includes(empresa)) ||
+    (nombre && (c.empresa||'').toLowerCase().includes(nombre)));
+  if(!matches.length) { alert('No encontrado. Usa "Guardar como nuevo".'); return; }
+  const list = matches.map((c,i) => `${i+1}. ${c.nombre}${c.empresa?' - '+c.empresa:''}`).join('\n');
+  const choice = prompt(`¿A qué cliente añadir?\n\n${list}\n\nNúmero:`);
+  const idx = parseInt(choice)-1;
+  if(isNaN(idx) || idx<0 || idx>=matches.length) return;
+  const target = matches[idx];
+  const actividad = document.getElementById('ai-actividad').value.trim();
+  const notas = document.getElementById('ai-notas').value.trim();
+  target.activities = target.activities || [];
+  if(actividad) target.activities.push({ text: actividad, date: new Date().toLocaleDateString('es-ES'), id: uid() });
+  if(notas) target.notas = (target.notas ? target.notas+'\n\n' : '') + '['+new Date().toLocaleDateString('es-ES')+'] '+notas;
+  const nueva = document.getElementById('ai-etapa').value;
+  const order = ['lead','prospect','propuesta','negociacion','cerrado'];
+  if(order.indexOf(nueva) > order.indexOf(target.etapa)) target.etapa = nueva;
+  save(); closeCapture();
+  renderKanban(); renderTable(); renderRutas();
+  alert(`✅ Actividad añadida a "${target.nombre}"`);
+}
+
+function updateDbIndicator() {
+  const name = localStorage.getItem('pipecrm_db_name');
+  const el = document.getElementById('db-indicator');
+  if(!el) return;
+  if(name) {
+    el.textContent = '📊 ' + name;
+    el.title = 'Base de datos activa: ' + name;
+    el.style.color = 'var(--accent)';
+  } else if(clients.length > 0) {
+    el.textContent = '📊 localStorage (' + clients.length + ' clientes)';
+    el.title = 'Datos cargados desde el navegador';
+    el.style.color = 'var(--muted)';
+  } else {
+    el.textContent = '';
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GOOGLE DRIVE SYNC
+// ══════════════════════════════════════════════════════════════════════════════
+const DRIVE_CLIENT_ID = '361982399748-ql6n36499tvcsqi9q68t8qdudsmonec0.apps.googleusercontent.com';
+const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILE_KEY = 'pipecrm_drive_file_id';
+const DRIVE_TOKEN_KEY = 'pipecrm_drive_token';
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+let driveToken = null;
+let driveFileId = localStorage.getItem(DRIVE_FILE_KEY) || null;
+let driveConnected = false;
+let driveSyncing = false;
+let unsavedChanges = false;
+
+function initDrive() {
+  const saved = localStorage.getItem(DRIVE_TOKEN_KEY);
+  if (saved) {
+    try {
+      const t = JSON.parse(saved);
+      if (t.expires_at && Date.now() < t.expires_at) {
+        driveToken = t.access_token;
+        driveConnected = true;
+        updateDriveStatus('connected', '☁️ Drive conectado');
+        return;
+      }
+    } catch(e) {}
+  }
+  updateDriveStatus('disconnected', '☁️ Conectar Drive');
+}
+
+function handleDriveConnect() {
+  if (driveConnected) {
+    if (confirm('¿Desconectar Google Drive?')) {
+      driveToken = null;
+      driveConnected = false;
+      localStorage.removeItem(DRIVE_TOKEN_KEY);
+      updateDriveStatus('disconnected', '☁️ Conectar Drive');
+    }
+    return;
+  }
+  // Lanzar OAuth popup
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: DRIVE_CLIENT_ID,
+    scope: DRIVE_SCOPES,
+    callback: (response) => {
+      if (response.error) {
+        alert('Error al conectar con Drive: ' + response.error);
+        return;
+      }
+      driveToken = response.access_token;
+      driveConnected = true;
+      // Guardar token con expiración
+      const tokenData = {
+        access_token: response.access_token,
+        expires_at: Date.now() + (response.expires_in - 60) * 1000
+      };
+      localStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify(tokenData));
+      updateDriveStatus('connected', '☁️ Drive conectado');
+      // Si hay cambios pendientes, sincronizar
+      if (unsavedChanges) autoSaveToDrive();
+    }
+  });
+  client.requestAccessToken();
+}
+
+function updateDriveStatus(state, text) {
+  const badge = document.getElementById('drive-status-badge');
+  const textEl = document.getElementById('drive-status-text');
+  if (!badge || !textEl) return;
+  badge.className = 'drive-status ' + state;
+  textEl.textContent = text;
+}
+
+function markUnsaved() {
+  unsavedChanges = true;
+  const dot = document.getElementById('unsaved-dot');
+  if (dot) dot.style.display = 'inline-block';
+}
+
+function markSaved() {
+  unsavedChanges = false;
+  const dot = document.getElementById('unsaved-dot');
+  if (dot) dot.style.display = 'none';
+}
+
+async function autoSaveToDrive() {
+  if (!driveConnected || !driveToken || driveSyncing) return;
+  driveSyncing = true;
+  updateDriveStatus('syncing', '⏳ Guardando...');
+  try {
+    const xlsxBlob = generateXlsxBlob();
+    if (driveFileId) {
+      await updateDriveFile(driveFileId, xlsxBlob);
+    } else {
+      driveFileId = await createDriveFile(xlsxBlob);
+      localStorage.setItem(DRIVE_FILE_KEY, driveFileId);
+    }
+    markSaved();
+    updateDriveStatus('connected', '☁️ Guardado ✓');
+    setTimeout(() => {
+      if (!unsavedChanges) updateDriveStatus('connected', '☁️ Drive conectado');
+    }, 2500);
+  } catch(err) {
+    console.error('Drive sync error:', err);
+    updateDriveStatus('disconnected', '⚠️ Error al guardar');
+    // Si el token expiró, reconectar
+    if (err.status === 401) {
+      driveConnected = false;
+      driveToken = null;
+      localStorage.removeItem(DRIVE_TOKEN_KEY);
+      setTimeout(() => updateDriveStatus('disconnected', '☁️ Reconectar Drive'), 2000);
+    }
+  } finally {
+    driveSyncing = false;
+  }
+}
+
+function generateXlsxBlob() {
+  const wb = XLSX.utils.book_new();
+  const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','',''];
+  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.'];
+  const data = clients.map(c => [
+    c.id||'', c.nombre||'', c.empresa||'', c.nif||'', c.email||'',
+    c.telefono||'', c.telefono2||'', c.cargo||'', c.web||'',
+    c.direccion||'', c.poblacion||'', c.provincia||'', c.cp||'', c.pais||'',
+    c.lat||'', c.lng||'', c.etapa||'', c.prioridad||'',
+    c.valor||'', c.prob||'', c.origen||'', c.siguiente||'', c.notas||'',
+    c.created||'', (c.activities&&c.activities.length ? c.activities[c.activities.length-1].date : '')
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([section, header, ...data]);
+  ws['!merges'] = [
+    {s:{r:0,c:0},e:{r:0,c:8}}, {s:{r:0,c:9},e:{r:0,c:15}},
+    {s:{r:0,c:16},e:{r:0,c:21}}, {s:{r:0,c:22},e:{r:0,c:24}}
+  ];
+  ws['!cols'] = header.map((_,i) => ({wch:[6,26,26,14,26,14,14,16,24,30,16,12,8,8,11,11,12,10,12,9,14,14,35,12,12][i]||14}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  return new Blob([wbout], {type: XLSX_MIME});
+}
+
+async function createDriveFile(blob) {
+  // Buscar primero si existe CRM_Urdaibai.xlsx en Drive
+  const searchResp = await fetch(
+    "https://www.googleapis.com/drive/v3/files?q=name%3D'CRM_Urdaibai.xlsx'%20and%20trashed%3Dfalse&fields=files(id,name)",
+    { headers: { Authorization: 'Bearer ' + driveToken } }
+  );
+  const searchData = await searchResp.json();
+  if (searchData.files && searchData.files.length > 0) {
+    // Ya existe, actualizar ese
+    const existingId = searchData.files[0].id;
+    await updateDriveFile(existingId, blob);
+    return existingId;
+  }
+  // Crear nuevo
+  const metadata = { name: 'CRM_Urdaibai.xlsx', mimeType: XLSX_MIME };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
+  form.append('file', blob);
+  const resp = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    { method:'POST', headers:{ Authorization:'Bearer '+driveToken }, body:form }
+  );
+  if (!resp.ok) { const e = await resp.json(); throw Object.assign(new Error(e.error?.message), {status:resp.status}); }
+  const data = await resp.json();
+  return data.id;
+}
+
+async function updateDriveFile(fileId, blob) {
+  const resp = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media',
+    { method:'PATCH', headers:{ Authorization:'Bearer '+driveToken, 'Content-Type':XLSX_MIME }, body:blob }
+  );
+  if (!resp.ok) { const e = await resp.json(); throw Object.assign(new Error(e.error?.message), {status:resp.status}); }
+}
+
+async function importFromDrive() {
+  if (!driveConnected || !driveToken) {
+    alert('Primero conecta con Google Drive');
+    return;
+  }
+  updateDriveStatus('syncing', '⏳ Cargando...');
+  try {
+    // Buscar el archivo
+    const searchResp = await fetch(
+      "https://www.googleapis.com/drive/v3/files?q=name%3D'CRM_Urdaibai.xlsx'%20and%20trashed%3Dfalse&orderBy=modifiedTime%20desc&fields=files(id,name,modifiedTime)&pageSize=1",
+      { headers: { Authorization: 'Bearer ' + driveToken } }
+    );
+    const searchData = await searchResp.json();
+    if (!searchData.files || !searchData.files.length) {
+      alert('No se encontró CRM_Urdaibai.xlsx en Drive');
+      updateDriveStatus('connected', '☁️ Drive conectado');
+      return;
+    }
+    const fileId = searchData.files[0].id;
+    driveFileId = fileId;
+    localStorage.setItem(DRIVE_FILE_KEY, fileId);
+    // Descargar el archivo
+    const fileResp = await fetch(
+      'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media',
+      { headers: { Authorization: 'Bearer ' + driveToken } }
+    );
+    if (!fileResp.ok) throw new Error('Error al descargar');
+    const arrayBuf = await fileResp.arrayBuffer();
+    // Parsear como si fuera importación normal
+    const wb = XLSX.read(arrayBuf, {type:'array'});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+    let dataStart = 2;
+    for(let i=0;i<Math.min(5,rows.length);i++) if(rows[i].join('|').toLowerCase().includes('nombre')){ dataStart=i+1; break; }
+    const K = ['id','nombre','empresa','nif','email','telefono','telefono2','cargo','web','direccion','poblacion','provincia','cp','pais','lat','lng','etapa','prioridad','valor','prob','origen','siguiente','notas','created','_la'];
+    let imp=0, upd=0;
+    for(let r=dataStart;r<rows.length;r++){
+      const row = rows[r]; if(!row[1] && !row[0]) continue;
+      const obj = {};
+      K.forEach((k,i) => {
+        let v = row[i];
+        if(typeof v === 'number' && v > 10000 && v < 100000 && (k==='created'||k==='siguiente'||k==='_la')) {
+          const d = XLSX.SSF.parse_date_code(v);
+          v = d ? String(d.d).padStart(2,'0')+'/'+String(d.m).padStart(2,'0')+'/'+d.y : v;
+        }
+        obj[k] = (v||'').toString().trim();
+      });
+      obj.lat = parseFloat(obj.lat)||null; obj.lng = parseFloat(obj.lng)||null;
+      obj.valor = parseFloat(obj.valor)||null; obj.prob = parseInt(obj.prob)||null;
+      if(!obj.nombre) continue;
+      const existing = clients.find(c => (obj.id && c.id===obj.id) || (c.nombre.toLowerCase()===obj.nombre.toLowerCase() && (c.empresa||'').toLowerCase()===(obj.empresa||'').toLowerCase()));
+      if(existing){ Object.assign(existing, obj); if(!existing.id) existing.id = uid(); upd++; }
+      else { if(!obj.id) obj.id = uid(); obj.activities = []; clients.push(obj); imp++; }
+    }
+    save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable();
+    updateDriveStatus('connected', '☁️ Drive conectado');
+    localStorage.setItem('pipecrm_db_name', 'CRM_Urdaibai.xlsx (Drive)');
+    updateDbIndicator();
+    alert('✅ ' + imp + ' nuevos · ' + upd + ' actualizados desde Drive');
+  } catch(err) {
+    console.error(err);
+    updateDriveStatus('disconnected', '⚠️ Error al cargar');
+    alert('Error al importar desde Drive: ' + err.message);
+  }
+}
+
+ensureComarcas();
+populateFilters();
+updateDbIndicator();
+renderKanban();
+initDrive();
+
+// Registrar Service Worker (PWA)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrado:', reg.scope))
+      .catch(err => console.log('SW error:', err));
+  });
+}
+</script>
+</body>
+</html>
