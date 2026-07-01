@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#2563eb">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>CRM Urdaibai — Pipeline, Rutas & Captura</title>
+<title>CRM Urdaibai â Pipeline, Rutas & Captura</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -59,7 +59,7 @@
   .stat-value { font-size: 1.5rem; font-weight: 800; }
   .stat-value.accent { color: var(--accent); }
   .kanban { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
-  .column { min-width: 210px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .column { min-width: 210px; max-width: 260px; width: 260px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
   .col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .col-title { font-size: 0.75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   .col-count { background: var(--card); border-radius: 20px; padding: 2px 8px; font-size: 0.7rem; font-family: var(--mono); }
@@ -69,8 +69,8 @@
   .kcard.dragging { opacity: 0.4; cursor: grabbing; }
   .column { transition: background .15s; }
   .column.drag-over { background: var(--accent-soft); border-color: var(--accent); }
-  .kcard-name { font-size: 0.85rem; font-weight: 700; margin-bottom: 3px; }
-  .kcard-company { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-bottom: 6px; }
+  .kcard-name { font-size: 0.85rem; font-weight: 700; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kcard-company { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .kcard-meta { display: flex; justify-content: space-between; align-items: center; }
   .kcard-value { font-size: 0.75rem; color: var(--accent); font-weight: 700; font-family: var(--mono); }
   .kcard-date { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); }
@@ -133,7 +133,7 @@
   .ruta-item.excluded .excl-btn { background:#dc2626; border-color:#dc2626; color:white; }
   .ruta-cb { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; transition: all .1s; background: var(--surface); }
   .ruta-cb.checked { background: var(--accent); border-color: var(--accent); }
-  .ruta-cb.checked::after { content: '✓'; color: white; font-size: 0.68rem; font-weight: 800; }
+  .ruta-cb.checked::after { content: 'â'; color: white; font-size: 0.68rem; font-weight: 800; }
   .ruta-order { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-family: var(--mono); font-weight: 700; flex-shrink: 0; color: white; }
   .ruta-info { flex: 1; min-width: 0; }
   .ruta-name { font-size: 0.79rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -224,13 +224,13 @@
     <span id="db-indicator" style="font-size:0.68rem;color:var(--muted);font-family:var(--mono);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="Base de datos activa"></span>
     <div id="unsaved-dot" title="Cambios sin guardar en Drive"></div>
     <div id="drive-status-badge" class="drive-status disconnected" style="cursor:pointer;" onclick="handleDriveConnect()" title="Conectar con Google Drive">
-      <span id="drive-status-icon">☁️</span>
+      <span id="drive-status-icon">âï¸</span>
       <span id="drive-status-text">Conectar Drive</span>
     </div>
-    <button class="nav-btn capture" onclick="openCapture()">📸 Capturar</button>
-    <label class="nav-btn">📥 Importar<input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
-    <button class="nav-btn" onclick="importFromDrive()" title="Cargar datos desde Google Drive">☁️ Desde Drive</button>
-    <button class="nav-btn" onclick="exportExcel()">📤 Exportar</button>
+    <button class="nav-btn capture" onclick="openCapture()">ð¸ Capturar</button>
+    <label class="nav-btn">ð¥ Importar<input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
+    <button class="nav-btn" onclick="importFromDrive()" title="Cargar datos desde Google Drive">âï¸ Desde Drive</button>
+    <button class="nav-btn" onclick="exportExcel()">ð¤ Exportar</button>
     <button class="nav-btn primary" onclick="openModal()">+ Nuevo</button>
   </div>
 </nav>
@@ -238,7 +238,7 @@
 <div class="view active" id="view-funnel">
   <div class="stats" id="stats-bar"></div>
   <div style="padding:8px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);">
-    <input class="search-input" id="funnel-search" placeholder="🔍 Buscar en funnel…"
+    <input class="search-input" id="funnel-search" placeholder="ð Buscar en funnelâ¦"
            oninput="renderKanban()" style="max-width:240px;flex-shrink:0;">
     <select class="filter-sel" id="funnel-comarca" multiple onchange="renderKanban()" style="max-width:180px;height:72px;" title="Ctrl+clic para varias comarcas">
     </select>
@@ -252,11 +252,11 @@
 
 <div class="view" id="view-clientes">
   <div class="toolbar">
-    <input class="search-input" id="search-input" placeholder="Buscar…" oninput="renderTable()">
+    <input class="search-input" id="search-input" placeholder="Buscarâ¦" oninput="renderTable()">
     <select class="filter-sel" id="filter-stage" onchange="renderTable()">
       <option value="">Todas etapas</option>
       <option value="lead">Lead</option><option value="prospect">Prospect</option>
-      <option value="propuesta">Propuesta</option><option value="negociacion">Negociación</option>
+      <option value="propuesta">Propuesta</option><option value="negociacion">NegociaciÃ³n</option>
       <option value="cerrado">Cerrado</option><option value="perdido">Perdido</option>
     </select>
     <select class="filter-sel" id="filter-priority" onchange="renderTable()">
@@ -270,7 +270,7 @@
     <select class="filter-sel" id="filter-comarca" multiple onchange="onComarcaFilterChange('clientes')" 
       style="min-width:150px;height:72px;" title="Ctrl+clic para seleccionar varias comarcas">
     </select>
-    <span class="comarca-hint">⌃ varias</span>
+    <span class="comarca-hint">â varias</span>
     <select class="filter-sel" id="filter-municipio" onchange="renderTable()" style="min-width:150px;">
       <option value="">Todos los municipios</option>
     </select>
@@ -280,11 +280,11 @@
       <thead><tr>
   <th onclick="sortTable('nombre')" style="cursor:pointer;user-select:none;">Nombre <span id="sort-nombre"></span></th>
   <th onclick="sortTable('empresa')" style="cursor:pointer;user-select:none;">Empresa <span id="sort-empresa"></span></th>
-  <th onclick="sortTable('telefono')" style="cursor:pointer;user-select:none;">Teléfono <span id="sort-telefono"></span></th>
+  <th onclick="sortTable('telefono')" style="cursor:pointer;user-select:none;">TelÃ©fono <span id="sort-telefono"></span></th>
   <th onclick="sortTable('etapa')" style="cursor:pointer;user-select:none;">Etapa <span id="sort-etapa"></span></th>
   <th onclick="sortTable('valor')" style="cursor:pointer;user-select:none;">Valor <span id="sort-valor"></span></th>
   <th onclick="sortTable('prioridad')" style="cursor:pointer;user-select:none;">P. <span id="sort-prioridad"></span></th>
-  <th onclick="sortTable('poblacion')" style="cursor:pointer;user-select:none;">Población <span id="sort-poblacion"></span></th>
+  <th onclick="sortTable('poblacion')" style="cursor:pointer;user-select:none;">PoblaciÃ³n <span id="sort-poblacion"></span></th>
   <th onclick="sortTable('comarca')" style="cursor:pointer;user-select:none;">Comarca <span id="sort-comarca"></span></th>
   <th>Links</th>
 </tr></thead>
@@ -294,7 +294,7 @@
 </div>
 
 <div class="view" id="view-rutas">
-  <!-- Barra de filtros: controlan qué aparece en el mapa -->
+  <!-- Barra de filtros: controlan quÃ© aparece en el mapa -->
   <div class="toolbar" style="align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);">
     <span style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);font-weight:700;">FILTRAR MAPA:</span>
     <select class="filter-sel" id="map-filter-comarca" multiple onchange="onComarcaFilterChange('map')"
@@ -316,25 +316,25 @@
       <button class="stage-chip chip-cerrado" onclick="filterRutaStage('cerrado',this)">Cerrado</button>
     </div>
     <span id="map-count-info" style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);margin-left:4px;"></span>
-    <button onclick="resetExcluded()" style="margin-left:auto;font-size:0.72rem;color:#dc2626;border:1px solid #fca5a5;background:#fff5f5;padding:4px 10px;border-radius:5px;cursor:pointer;" title="Recuperar descartados del mapa">↩ Descartados</button>
+    <button onclick="resetExcluded()" style="margin-left:auto;font-size:0.72rem;color:#dc2626;border:1px solid #fca5a5;background:#fff5f5;padding:4px 10px;border-radius:5px;cursor:pointer;" title="Recuperar descartados del mapa">â© Descartados</button>
   </div>
   <!-- Layout: mapa grande + panel ruta lateral -->
   <div class="ruta-container">
     <div id="map"></div>
-    <!-- Panel derecho: solo los que están EN RUTA -->
+    <!-- Panel derecho: solo los que estÃ¡n EN RUTA -->
     <div class="ruta-panel">
       <div class="ruta-panel-header" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>🗺 Mi ruta</span>
+        <span>ðº Mi ruta</span>
         <span id="ruta-total-count" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);">0 paradas</span>
       </div>
       <div style="padding:6px 10px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="selectNone()" style="font-size:0.7rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);">✗ Vaciar</button>
-        <button onclick="selectAllVisible()" style="font-size:0.7rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);">+ Añadir visibles</button>
+        <button onclick="selectNone()" style="font-size:0.7rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);">â Vaciar</button>
+        <button onclick="selectAllVisible()" style="font-size:0.7rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);">+ AÃ±adir visibles</button>
         <span id="ruta-selected-info" style="font-size:0.7rem;color:var(--muted);font-family:var(--mono);align-self:center;"></span>
       </div>
       <div class="ruta-items-wrap" id="ruta-list"></div>
       <div style="padding:10px;border-top:1px solid var(--border);">
-        <button class="nav-btn primary" onclick="openGMapsRoute()" style="width:100%;justify-content:center;">🗺 Abrir en Google Maps</button>
+        <button class="nav-btn primary" onclick="openGMapsRoute()" style="width:100%;justify-content:center;">ðº Abrir en Google Maps</button>
       </div>
     </div>
   </div>
@@ -345,7 +345,7 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="modal-title">Nuevo cliente</div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()">â</button>
     </div>
     <div class="modal-body">
       <p class="section-label">Contacto</p>
@@ -354,19 +354,19 @@
         <div class="form-group"><label>Empresa</label><input type="text" id="f-empresa"></div>
         <div class="form-group"><label>NIF / DNI</label><input type="text" id="f-nif" placeholder="B12345678 / 12345678A"></div>
         <div class="form-group"><label>Email</label><input type="email" id="f-email"></div>
-        <div class="form-group"><label>Teléfono 1</label><input type="tel" id="f-telefono"></div>
-        <div class="form-group"><label>Teléfono 2</label><input type="tel" id="f-telefono2"></div>
+        <div class="form-group"><label>TelÃ©fono 1</label><input type="tel" id="f-telefono"></div>
+        <div class="form-group"><label>TelÃ©fono 2</label><input type="tel" id="f-telefono2"></div>
         <div class="form-group"><label>Cargo</label><input type="text" id="f-cargo"></div>
         <div class="form-group"><label>Web</label><input type="text" id="f-web"></div>
       </div>
       <hr class="section-sep">
-      <p class="section-label">Localización</p>
+      <p class="section-label">LocalizaciÃ³n</p>
       <div class="form-grid">
-        <div class="form-group span2"><label>Dirección</label><input type="text" id="f-direccion"></div>
-        <div class="form-group"><label>Población</label><input type="text" id="f-poblacion"></div>
+        <div class="form-group span2"><label>DirecciÃ³n</label><input type="text" id="f-direccion"></div>
+        <div class="form-group"><label>PoblaciÃ³n</label><input type="text" id="f-poblacion"></div>
         <div class="form-group"><label>Provincia</label><input type="text" id="f-provincia"></div>
         <div class="form-group"><label>CP</label><input type="text" id="f-cp"></div>
-        <div class="form-group"><label>Comarca</label><input type="text" id="f-comarca" list="comarca-options"><datalist id="comarca-options"><option value="Busturialdea-Urdaibai"><option value="Gran Bilbao"><option value="Uribe"><option value="Lea-Artibai"><option value="Duranguesado"><option value="Arratia-Nervión"><option value="Las Encartaciones"></datalist></div>
+        <div class="form-group"><label>Comarca</label><input type="text" id="f-comarca" list="comarca-options"><datalist id="comarca-options"><option value="Busturialdea-Urdaibai"><option value="Gran Bilbao"><option value="Uribe"><option value="Lea-Artibai"><option value="Duranguesado"><option value="Arratia-NerviÃ³n"><option value="Las Encartaciones"></datalist></div>
         <div class="form-group"><label>Latitud</label><input type="number" id="f-lat" step="any"></div>
         <div class="form-group"><label>Longitud</label><input type="number" id="f-lng" step="any"></div>
       </div>
@@ -374,16 +374,16 @@
       <p class="section-label">Establecimiento</p>
       <div class="form-grid">
         <div class="form-group span2"><label>Tipo de establecimiento</label>
-          <input type="text" id="f-tipo_alojamiento" list="tipo-options" placeholder="Agroturismo, Hotel, Restaurante…">
+          <input type="text" id="f-tipo_alojamiento" list="tipo-options" placeholder="Agroturismo, Hotel, Restauranteâ¦">
           <datalist id="tipo-options">
             <option value="Agroturismo"><option value="Casa Rural"><option value="Hotel Rural">
             <option value="Hotel"><option value="Hostal"><option value="Apartamento Rural">
-            <option value="Restaurante"><option value="Bar-Restaurante"><option value="Sidería">
+            <option value="Restaurante"><option value="Bar-Restaurante"><option value="SiderÃ­a">
             <option value="Camping"><option value="Albergue"><option value="Balneario">
           </datalist>
         </div>
         <div class="form-group"><label>Capacidad (plazas)</label><input type="number" id="f-capacidad"></div>
-        <div class="form-group"><label>Categoría / Estrellas</label><input type="text" id="f-categoria"></div>
+        <div class="form-group"><label>CategorÃ­a / Estrellas</label><input type="text" id="f-categoria"></div>
       </div>
       <hr class="section-sep">
       <p class="section-label">Pipeline</p>
@@ -391,7 +391,7 @@
         <div class="form-group"><label>Etapa *</label>
           <select class="form-sel" id="f-etapa">
             <option value="lead">Lead</option><option value="prospect">Prospect</option>
-            <option value="propuesta">Propuesta</option><option value="negociacion">Negociación</option>
+            <option value="propuesta">Propuesta</option><option value="negociacion">NegociaciÃ³n</option>
             <option value="cerrado">Cerrado</option><option value="perdido">Perdido</option>
           </select>
         </div>
@@ -400,12 +400,12 @@
             <option value="media">Media</option><option value="alta">Alta</option><option value="baja">Baja</option>
           </select>
         </div>
-        <div class="form-group"><label>Valor (€)</label><input type="number" id="f-valor"></div>
+        <div class="form-group"><label>Valor (â¬)</label><input type="number" id="f-valor"></div>
         <div class="form-group"><label>Prob %</label><input type="number" id="f-prob" min="0" max="100"></div>
-        <div class="form-group"><label>Próximo contacto</label><input type="date" id="f-siguiente"></div>
+        <div class="form-group"><label>PrÃ³ximo contacto</label><input type="date" id="f-siguiente"></div>
         <div class="form-group"><label>Origen</label>
           <select class="form-sel" id="f-origen">
-            <option value="">—</option><option value="web">Web</option><option value="referido">Referido</option>
+            <option value="">â</option><option value="web">Web</option><option value="referido">Referido</option>
             <option value="visita">Visita</option><option value="llamada">Llamada</option>
             <option value="email">Email</option><option value="otro">Otro</option>
           </select>
@@ -420,8 +420,8 @@
       <p class="section-label">Actividad</p>
       <div id="activity-log" class="activities"></div>
       <div class="add-activity">
-        <input type="text" id="new-activity" placeholder="Registrar actividad…">
-        <button onclick="addActivity()">+ Añadir</button>
+        <input type="text" id="new-activity" placeholder="Registrar actividadâ¦">
+        <button onclick="addActivity()">+ AÃ±adir</button>
       </div>
     </div>
     <div class="modal-footer">
@@ -436,13 +436,13 @@
 <div class="overlay" id="capture-overlay" onclick="closeCaptureOutside(event)">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">📸 Captura rápida con IA</div>
-      <button class="modal-close" onclick="closeCapture()">✕</button>
+      <div class="modal-title">ð¸ Captura rÃ¡pida con IA</div>
+      <button class="modal-close" onclick="closeCapture()">â</button>
     </div>
     <div class="modal-body">
       <div class="ai-key-section" id="ai-key-section">
-        <strong>🔑 Configura tu API Key de Anthropic</strong><br>
-        <span style="color:#78350f">Se guarda solo en este navegador. Obtén una en console.anthropic.com</span>
+        <strong>ð Configura tu API Key de Anthropic</strong><br>
+        <span style="color:#78350f">Se guarda solo en este navegador. ObtÃ©n una en console.anthropic.com</span>
         <input type="password" id="ai-key-input" placeholder="sk-ant-..." onchange="saveApiKey()">
       </div>
 
@@ -461,29 +461,29 @@
       </div>
 
       <div class="capture-step">
-        <p class="section-label">2. Qué ha pasado (opcional)</p>
-        <textarea class="capture-notes-input" id="capture-notes" placeholder="Ej: Hablé con Antón de Ozollo Bekoa, quiere presupuesto robot piscina + mantenimiento 3000m2, prefiere renting."></textarea>
+        <p class="section-label">2. QuÃ© ha pasado (opcional)</p>
+        <textarea class="capture-notes-input" id="capture-notes" placeholder="Ej: HablÃ© con AntÃ³n de Ozollo Bekoa, quiere presupuesto robot piscina + mantenimiento 3000m2, prefiere renting."></textarea>
       </div>
 
       <button class="btn-save" style="width:100%;padding:12px;font-size:0.9rem;" onclick="processCapture()">
-        ✨ Extraer datos con Claude
+        â¨ Extraer datos con Claude
       </button>
 
       <div class="ai-status" id="ai-status"></div>
 
       <div id="ai-result" style="display:none;margin-top:14px;">
         <hr class="section-sep">
-        <p class="section-label">Datos extraídos — revisa antes de guardar</p>
+        <p class="section-label">Datos extraÃ­dos â revisa antes de guardar</p>
         <div class="form-grid">
           <div class="form-group"><label>Nombre contacto</label><input type="text" id="ai-nombre"></div>
           <div class="form-group"><label>Empresa</label><input type="text" id="ai-empresa"></div>
-          <div class="form-group"><label>Teléfono</label><input type="tel" id="ai-telefono"></div>
+          <div class="form-group"><label>TelÃ©fono</label><input type="tel" id="ai-telefono"></div>
           <div class="form-group"><label>Email</label><input type="email" id="ai-email"></div>
-          <div class="form-group"><label>Población</label><input type="text" id="ai-poblacion"></div>
+          <div class="form-group"><label>PoblaciÃ³n</label><input type="text" id="ai-poblacion"></div>
           <div class="form-group"><label>Etapa</label>
             <select class="form-sel" id="ai-etapa">
               <option value="lead">Lead</option><option value="prospect">Prospect</option>
-              <option value="propuesta">Propuesta</option><option value="negociacion">Negociación</option>
+              <option value="propuesta">Propuesta</option><option value="negociacion">NegociaciÃ³n</option>
               <option value="cerrado">Cerrado</option>
             </select>
           </div>
@@ -492,10 +492,10 @@
         </div>
         <div style="display:flex;gap:8px;margin-top:14px;">
           <button class="btn-cancel" onclick="closeCapture()" style="flex:1">Cancelar</button>
-          <button class="btn-save" onclick="saveCapture()" style="flex:2">💾 Guardar como nuevo</button>
+          <button class="btn-save" onclick="saveCapture()" style="flex:2">ð¾ Guardar como nuevo</button>
         </div>
         <div style="margin-top:8px;font-size:0.75rem;color:var(--muted);text-align:center;">
-          O <button style="background:none;border:none;color:var(--accent);cursor:pointer;text-decoration:underline;font-family:var(--font);font-size:0.75rem;" onclick="mergeCapture()">añadir a cliente existente</button>
+          O <button style="background:none;border:none;color:var(--accent);cursor:pointer;text-decoration:underline;font-family:var(--font);font-size:0.75rem;" onclick="mergeCapture()">aÃ±adir a cliente existente</button>
         </div>
       </div>
     </div>
@@ -509,13 +509,13 @@ let clients = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
 let editingId = null;
 let capturePhoto = null;
 const stages = ['lead','prospect','propuesta','negociacion','cerrado','perdido'];
-const stageLabels = {lead:'Lead',prospect:'Prospect',propuesta:'Propuesta',negociacion:'Negociación',cerrado:'Cerrado',perdido:'Perdido'};
+const stageLabels = {lead:'Lead',prospect:'Prospect',propuesta:'Propuesta',negociacion:'NegociaciÃ³n',cerrado:'Cerrado',perdido:'Perdido'};
 const stageColors = {lead:'#16a34a',prospect:'#ca8a04',propuesta:'#ea580c',negociacion:'#7c3aed',cerrado:'#059669',perdido:'#dc2626'};
 
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(clients));
   markUnsaved();
-  // Debounce: esperar 800ms tras el último cambio antes de subir a Drive
+  // Debounce: esperar 800ms tras el Ãºltimo cambio antes de subir a Drive
   clearTimeout(save._driveTimer);
   save._driveTimer = setTimeout(() => autoSaveToDrive(), 800);
 }
@@ -543,9 +543,9 @@ function renderStats() {
   bar.innerHTML = `
     <div class="stat"><div class="stat-label">Total</div><div class="stat-value accent">${total}</div></div>
     <div class="stat"><div class="stat-label">Pipeline</div><div class="stat-value">${pipeline.length}</div></div>
-    <div class="stat"><div class="stat-label">Valor pipeline</div><div class="stat-value accent">${valorPipe.toLocaleString('es-ES')}€</div></div>
+    <div class="stat"><div class="stat-label">Valor pipeline</div><div class="stat-value accent">${valorPipe.toLocaleString('es-ES')}â¬</div></div>
     <div class="stat"><div class="stat-label">Cerrados</div><div class="stat-value">${cerrados}</div></div>
-    <div class="stat"><div class="stat-label">Facturado</div><div class="stat-value accent">${valorCerrado.toLocaleString('es-ES')}€</div></div>
+    <div class="stat"><div class="stat-label">Facturado</div><div class="stat-value accent">${valorCerrado.toLocaleString('es-ES')}â¬</div></div>
     <div class="stat"><div class="stat-label">Hoy</div><div class="stat-value" style="${pendientes>0?'color:var(--propuesta)':''}">${pendientes}</div></div>
   `;
 }
@@ -563,7 +563,7 @@ function renderKanban() {
     [...cs].filter(c=>!COMARCAS_ORDER.includes(c)).sort().forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; fcSel.appendChild(o); });
   }
   if(ftSel && ftSel.options.length <= 1) {
-    [...new Set(clients.map(c=>c.tipo_alojamiento).filter(Boolean))].sort().forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; ftSel.appendChild(o); });
+    [...new Set(clients.map(c=>c.sector).filter(Boolean))].sort().forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; ftSel.appendChild(o); });
   }
   const board = document.getElementById('kanban-board');
   board.innerHTML = '';
@@ -576,7 +576,7 @@ function renderKanban() {
       if(c.etapa !== stage) return false;
       if(fq && ![c.nombre,c.empresa,c.telefono,c.poblacion].join(' ').toLowerCase().includes(fq)) return false;
       if(fc.length>0 && !fc.includes((c.comarca||'').trim())) return false;
-      if(ft && (c.tipo_alojamiento||'').trim() !== ft) return false;
+      if(ft && (c.sector||'').trim() !== ft) return false;
       return true;
     });
     const col = document.createElement('div');
@@ -585,7 +585,7 @@ function renderKanban() {
     col.innerHTML = `<div class="col-header">
       <span class="col-title" style="color:${stageColors[stage]}">${stageLabels[stage]}</span>
       <span class="col-count">${cards.length}</span></div>`;
-    if(cards.length===0) col.innerHTML += `<div style="color:var(--muted);font-size:0.7rem;padding:8px 0;text-align:center;font-family:var(--mono);">—</div>`;
+    if(cards.length===0) col.innerHTML += `<div style="color:var(--muted);font-size:0.7rem;padding:8px 0;text-align:center;font-family:var(--mono);">â</div>`;
 
     // Drop zone events on column
     col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); });
@@ -612,9 +612,9 @@ function renderKanban() {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;gap:6px;">
           <div class="kcard-name">${c.nombre}</div>
           <span class="priority-tag p-${c.prioridad||'media'}">${c.prioridad||'m'}</span></div>
-        <div class="kcard-company">${c.empresa||'—'}${c.tipo_alojamiento?' · <span style="color:var(--muted);font-size:0.68rem;">'+c.tipo_alojamiento+'</span>':''}</div>
+        <div class="kcard-company">${c.empresa||'â'}${c.sector?' Â· <span style="color:var(--muted);font-size:0.68rem;">'+c.sector+'</span>':''}</div>
         <div class="kcard-meta">
-          <span class="kcard-value">${c.valor?parseFloat(c.valor).toLocaleString('es-ES')+'€':''}</span>
+          <span class="kcard-value">${c.valor?parseFloat(c.valor).toLocaleString('es-ES')+'â¬':''}</span>
           <span class="kcard-date">${c.siguiente||''}</span></div>`;
       // Drag events
       card.addEventListener('dragstart', e => {
@@ -643,7 +643,7 @@ function renderKanban() {
     if(fq2||fc2Arr.length>0||ft2) {
       const total = clients.reduce((n,c) => {
         const match = !fq2 || [c.nombre,c.empresa,c.telefono,c.poblacion].join(' ').toLowerCase().includes(fq2.toLowerCase());
-        return n + (match && (fc2Arr.length===0||fc2Arr.includes((c.comarca||'').trim())) && (!ft2||(c.tipo_alojamiento||'').trim()===ft2) ? 1 : 0);
+        return n + (match && (fc2Arr.length===0||fc2Arr.includes((c.comarca||'').trim())) && (!ft2||(c.sector||'').trim()===ft2) ? 1 : 0);
       }, 0);
       info.textContent = `${total} resultado${total!==1?'s':''}`;
     } else { info.textContent = ''; }
@@ -651,7 +651,7 @@ function renderKanban() {
 }
 
 
-// ── Comarca map (auto-asignado por municipio) ────────────────────────────────
+// ââ Comarca map (auto-asignado por municipio) ââââââââââââââââââââââââââââââââ
 const COMARCA_MAP = {
   // Gran Bilbao
   'bilbao':'Gran Bilbao','barakaldo':'Gran Bilbao','getxo':'Gran Bilbao','santurtzi':'Gran Bilbao',
@@ -665,7 +665,7 @@ const COMARCA_MAP = {
   'mundaka':'Busturialdea-Urdaibai','busturia':'Busturialdea-Urdaibai','elantxobe':'Busturialdea-Urdaibai',
   'forua':'Busturialdea-Urdaibai','ea':'Busturialdea-Urdaibai','morga':'Busturialdea-Urdaibai',
   'kortezubi':'Busturialdea-Urdaibai','murueta':'Busturialdea-Urdaibai','sukarrieta':'Busturialdea-Urdaibai',
-  'ibarrangelu':'Busturialdea-Urdaibai','arrieta':'Busturialdea-Urdaibai','ereño':'Busturialdea-Urdaibai',
+  'ibarrangelu':'Busturialdea-Urdaibai','arrieta':'Busturialdea-Urdaibai','ereÃ±o':'Busturialdea-Urdaibai',
   'errigoiti':'Busturialdea-Urdaibai','gautegiz-arteaga':'Busturialdea-Urdaibai',
   'gautegiz arteaga':'Busturialdea-Urdaibai','muxika':'Busturialdea-Urdaibai',
   'ajangiz':'Busturialdea-Urdaibai','urdaibai':'Busturialdea-Urdaibai',
@@ -673,25 +673,25 @@ const COMARCA_MAP = {
   'munitibar-arbatzegi gerrikaitz':'Busturialdea-Urdaibai',
   // Uribe
   'bakio':'Uribe','sopelana':'Uribe','plentzia':'Uribe','gorliz':'Uribe','urduliz':'Uribe',
-  'meñaka':'Uribe','mungia':'Uribe','lemoiz':'Uribe','maruri-jatabe':'Uribe','gatika':'Uribe',
+  'meÃ±aka':'Uribe','mungia':'Uribe','lemoiz':'Uribe','maruri-jatabe':'Uribe','gatika':'Uribe',
   // Lea-Artibai
   'lekeitio':'Lea-Artibai','ondarroa':'Lea-Artibai','markina-xemein':'Lea-Artibai',
   'berriatua':'Lea-Artibai','ispaster':'Lea-Artibai','gizaburuaga':'Lea-Artibai',
   'mendexa':'Lea-Artibai','etxebarria':'Lea-Artibai','ziortza-bolibar':'Lea-Artibai',
   'aulesti':'Lea-Artibai',
   // Duranguesado
-  'durango':'Duranguesado','abadiño':'Duranguesado','amorebieta-etxano':'Duranguesado',
-  'berriz':'Duranguesado','elorrio':'Duranguesado','mañaria':'Duranguesado',
+  'durango':'Duranguesado','abadiÃ±o':'Duranguesado','amorebieta-etxano':'Duranguesado',
+  'berriz':'Duranguesado','elorrio':'Duranguesado','maÃ±aria':'Duranguesado',
   'zaldibar':'Duranguesado','iurreta':'Duranguesado','otxandio':'Duranguesado',
   'atxondo':'Duranguesado','garai':'Duranguesado','izurtza':'Duranguesado',
   'mallabia':'Duranguesado','ermua':'Duranguesado',
-  // Arratia-Nervión
-  'arakaldo':'Arratia-Nervión','arantzazu':'Arratia-Nervión','zeberio':'Arratia-Nervión',
-  'dima':'Arratia-Nervión','orozko':'Arratia-Nervión','ubide':'Arratia-Nervión',
-  'igorre':'Arratia-Nervión','arrankudiaga':'Arratia-Nervión','arrankudiaga-zollo':'Arratia-Nervión',
-  'artea':'Arratia-Nervión','zeanuri':'Arratia-Nervión','areatza':'Arratia-Nervión',
+  // Arratia-NerviÃ³n
+  'arakaldo':'Arratia-NerviÃ³n','arantzazu':'Arratia-NerviÃ³n','zeberio':'Arratia-NerviÃ³n',
+  'dima':'Arratia-NerviÃ³n','orozko':'Arratia-NerviÃ³n','ubide':'Arratia-NerviÃ³n',
+  'igorre':'Arratia-NerviÃ³n','arrankudiaga':'Arratia-NerviÃ³n','arrankudiaga-zollo':'Arratia-NerviÃ³n',
+  'artea':'Arratia-NerviÃ³n','zeanuri':'Arratia-NerviÃ³n','areatza':'Arratia-NerviÃ³n',
   // Las Encartaciones
-  'balmaseda':'Las Encartaciones','zalla':'Las Encartaciones','güeñes':'Las Encartaciones',
+  'balmaseda':'Las Encartaciones','zalla':'Las Encartaciones','gÃ¼eÃ±es':'Las Encartaciones',
   'galdames':'Las Encartaciones','sopuerta':'Las Encartaciones','artzentales':'Las Encartaciones',
   'karrantza harana':'Las Encartaciones','trucios-turtzioz':'Las Encartaciones',
   'gordexola':'Las Encartaciones','muskiz':'Las Encartaciones','lanestosa':'Las Encartaciones',
@@ -704,9 +704,9 @@ function getComarca(poblacion) {
 }
 
 // Auto-assign comarca to any client missing it
-// ── Comarca ↔ Municipio linked filters ──────────────────────────────────────
+// ââ Comarca â Municipio linked filters ââââââââââââââââââââââââââââââââââââââ
 
-// Build reverse map: comarca → [municipios]
+// Build reverse map: comarca â [municipios]
 function getComarcaMunicipios(comarcas) {
   if(!comarcas || comarcas.length === 0) return null; // null = all municipios
   const result = new Set();
@@ -752,7 +752,7 @@ function onComarcaFilterChange(context) {
   if(context === 'map') refreshMapView();
 }
 
-// ── Web links in table open in new tab ──────────────────────────────────────
+// ââ Web links in table open in new tab ââââââââââââââââââââââââââââââââââââââ
 function openWeb(url, event) {
   event.stopPropagation();
   event.preventDefault();
@@ -781,14 +781,14 @@ function ensureComarcas() {
   if(changed) save();
 }
 
-const COMARCAS_ORDER = ['Gran Bilbao','Busturialdea-Urdaibai','Uribe','Lea-Artibai','Duranguesado','Arratia-Nervión','Las Encartaciones'];
+const COMARCAS_ORDER = ['Gran Bilbao','Busturialdea-Urdaibai','Uribe','Lea-Artibai','Duranguesado','Arratia-NerviÃ³n','Las Encartaciones'];
 
 function populateFilters() {
   const tiposSet = new Set();
   const locSet = new Set();
   const comarcaSet = new Set();
   clients.forEach(c => {
-    if(c.tipo_alojamiento && c.tipo_alojamiento.trim()) tiposSet.add(c.tipo_alojamiento.trim());
+    if(c.sector && c.sector.trim()) tiposSet.add(c.sector.trim());
     if(c.poblacion && c.poblacion.trim()) locSet.add(c.poblacion.trim());
     if(c.comarca && c.comarca.trim()) comarcaSet.add(c.comarca.trim());
   });
@@ -803,13 +803,13 @@ function populateFilters() {
     sel.innerHTML = '<option value="">Todos los tipos</option>' +
       tipos.map(t => `<option value="${t}"${t===prev?' selected':''}>${t}</option>`).join('');
   });
-  // Comarcas multi-select: preservar selección actual
+  // Comarcas multi-select: preservar selecciÃ³n actual
   [document.getElementById('filter-comarca'), document.getElementById('map-filter-comarca')].forEach(sel => {
     if(!sel) return;
     const prevSelected = [...sel.selectedOptions].map(o=>o.value).filter(Boolean);
     sel.innerHTML = comarcas.map(c => `<option value="${c}"${prevSelected.includes(c)?' selected':''}>${c}</option>`).join('');
   });
-  // Municipios: se populan dinámicamente según comarca seleccionada
+  // Municipios: se populan dinÃ¡micamente segÃºn comarca seleccionada
   updateMunicipioDropdowns();
 }
 
@@ -819,7 +819,7 @@ function sortTable(col) {
   // Update arrows
   document.querySelectorAll('thead th span').forEach(s => s.textContent = '');
   const el = document.getElementById('sort-'+col);
-  if(el) el.textContent = tableSort.dir === 1 ? ' ▲' : ' ▼';
+  if(el) el.textContent = tableSort.dir === 1 ? ' â²' : ' â¼';
   renderTable();
 }
 
@@ -834,7 +834,7 @@ function renderTable() {
   const fcArr = fcSel ? [...fcSel.selectedOptions].map(o=>o.value).filter(Boolean) : [];
   let filtered = clients.filter(c => {
     const match = [c.nombre,c.empresa,c.email,c.telefono,c.poblacion].join(' ').toLowerCase().includes(q);
-    const matchTipo   = !ft || (c.tipo_alojamiento||'').trim() === ft;
+    const matchTipo   = !ft || (c.sector||'').trim() === ft;
     const matchLoc    = !fl || (c.poblacion||'').trim() === fl;
     const matchComarca = fcArr.length===0 || fcArr.includes((c.comarca||'').trim());
     return match && (!fs||c.etapa===fs) && (!fp||c.prioridad===fp) && matchTipo && matchLoc && matchComarca;
@@ -854,21 +854,21 @@ function renderTable() {
     });
   }
   const tbody = document.getElementById('clientes-tbody');
-  if(!filtered.length) { tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div>📋</div>Sin resultados</div></td></tr>`; return; }
+  if(!filtered.length) { tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div>ð</div>Sin resultados</div></td></tr>`; return; }
   tbody.innerHTML = filtered.map(c => {
     const webUrl = c.web ? (c.web.startsWith('http') ? c.web : 'https://'+c.web) : '';
     const mapsUrl = (c.lat && c.lng) ? 'https://www.google.com/maps?q='+c.lat+','+c.lng+'&ll='+c.lat+','+c.lng+'&z=19&t=k' : '';
-    const webLink = webUrl ? '<a href="'+webUrl+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="text-decoration:none;margin-right:6px;font-size:1rem;" title="Abrir web">🌐</a>' : '<span style="color:var(--border);">—</span>';
-    const mapsLink = mapsUrl ? '<a href="'+mapsUrl+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="text-decoration:none;font-size:1rem;" title="Ver en Google Maps satélite">🛰️</a>' : '';
+    const webLink = webUrl ? '<a href="'+webUrl+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="text-decoration:none;margin-right:6px;font-size:1rem;" title="Abrir web">ð</a>' : '<span style="color:var(--border);">â</span>';
+    const mapsLink = mapsUrl ? '<a href="'+mapsUrl+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="text-decoration:none;font-size:1rem;" title="Ver en Google Maps satÃ©lite">ð°ï¸</a>' : '';
     const tel2 = c.telefono2 ? '<br><span style="color:var(--muted);font-size:0.72rem;">'+c.telefono2+'</span>' : '';
     return '<tr data-id="'+c.id+'" onclick="openModal(this.dataset.id)">'
       +'<td><strong>'+c.nombre+'</strong></td>'
-      +'<td>'+(c.empresa||'—')+'</td>'
-      +'<td style="font-family:var(--mono);font-size:0.78rem;">'+(c.telefono||'—')+tel2+'</td>'
+      +'<td>'+(c.empresa||'â')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:0.78rem;">'+(c.telefono||'â')+tel2+'</td>'
       +'<td><span class="stage-badge badge-'+c.etapa+'">'+stageLabels[c.etapa]+'</span></td>'
-      +'<td style="font-family:var(--mono);font-size:0.78rem;">'+(c.valor?parseFloat(c.valor).toLocaleString('es-ES')+'€':'—')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:0.78rem;">'+(c.valor?parseFloat(c.valor).toLocaleString('es-ES')+'â¬':'â')+'</td>'
       +'<td><span class="priority-tag p-'+(c.prioridad||'media')+'">'+(c.prioridad||'m')+'</span></td>'
-      +'<td style="font-size:0.78rem;">'+(c.poblacion||'—')+'</td>'
+      +'<td style="font-size:0.78rem;">'+(c.poblacion||'â')+'</td>'
       +'<td style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);">'+(c.comarca||'')+'</td>'
       +'<td style="font-size:0.9rem;white-space:nowrap;">'+webLink+mapsLink+'</td>'
       +'</tr>';
@@ -879,7 +879,7 @@ let tableSort = {col: null, dir: 1}; // col = field name, dir = 1 asc / -1 desc
 let mapInstance = null;
 let mapMarkers = [];
 let rutaSelected = new Set(); // IDs seleccionados para la ruta
-let rutaExcluded = new Set(); // IDs excluidos del mapa (sin jardín etc)
+let rutaExcluded = new Set(); // IDs excluidos del mapa (sin jardÃ­n etc)
 let rutaFilterStage = '';     // filtro activo en panel izquierdo
 
 function toggleExclude(id) {
@@ -893,9 +893,9 @@ function initMap() {
   if(mapInstance) { mapInstance.invalidateSize(); refreshMapMarkers(); return; }
   mapInstance = L.map('map').setView([43.355, -2.650], 11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
+    attribution: 'Â© OpenStreetMap Â© CARTO', subdomains: 'abcd', maxZoom: 19
   }).addTo(mapInstance);
-  // Marcar cuando el usuario interactúa (mueve/zoom) para preservar su vista
+  // Marcar cuando el usuario interactÃºa (mueve/zoom) para preservar su vista
   mapInstance.on('movestart zoomstart', function(e) {
     if(e.originalEvent) mapInstance._userHasInteracted = true;
   });
@@ -910,20 +910,20 @@ function refreshMapMarkers() {
   const hasUserInteracted = mapInstance._userHasInteracted || false;
   mapMarkers.forEach(m => mapInstance.removeLayer(m));
   mapMarkers = [];
-  // Solo mostrar en mapa los que tienen coordenadas Y están seleccionados para ruta
-  // Si no hay ninguno seleccionado, mostrar todos con coordenadas (modo exploración)
+  // Solo mostrar en mapa los que tienen coordenadas Y estÃ¡n seleccionados para ruta
+  // Si no hay ninguno seleccionado, mostrar todos con coordenadas (modo exploraciÃ³n)
   const withCoords = clients.filter(c => c.lat && c.lng && c.etapa !== 'perdido');
   const mft = (document.getElementById('map-filter-tipo')||{value:''}).value;
   const mfl = (document.getElementById('map-filter-municipio')||{value:''}).value;
   const mfcSel2 = document.getElementById('map-filter-comarca');
   const mfcArr2 = mfcSel2 ? [...mfcSel2.selectedOptions].map(o=>o.value).filter(Boolean) : [];
   const applyMapFilters = arr => arr.filter(c => {
-    if(mft && (c.tipo_alojamiento||'').trim() !== mft) return false;
+    if(mft && (c.sector||'').trim() !== mft) return false;
     if(mfl && (c.poblacion||'').trim() !== mfl) return false;
     if(mfcArr2.length>0 && !mfcArr2.includes((c.comarca||'').trim())) return false;
     return true;
   });
-  // Show all filtered clients (not excluded) — selection only affects marker style
+  // Show all filtered clients (not excluded) â selection only affects marker style
   const notExcluded = withCoords.filter(c => !rutaExcluded.has(c.id));
   const toShow = applyMapFilters(notExcluded);
 
@@ -947,7 +947,7 @@ function refreshMapMarkers() {
       : '';
     const popMapsBtn = '<a href="'+popMapsUrl+'" target="_blank" rel="noopener noreferrer" style="flex:1;min-width:70px;padding:5px 8px;border-radius:5px;border:1px solid #16a34a;background:#dcfce7;color:#166534;font-size:0.72rem;font-weight:700;text-decoration:none;text-align:center;display:inline-block;">&#128752; Sat&#233;lite</a>';
     const popTelHtml = c.telefono ? '<span style="font-size:0.72rem;color:#555;font-family:monospace;">'+c.telefono+'</span>' : '';
-    const popTipoHtml = c.tipo_alojamiento ? ' &middot; '+c.tipo_alojamiento : '';
+    const popTipoHtml = c.sector ? ' &middot; '+c.sector : '';
     const popRutaBg = inRuta ? '#fee2e2' : '#f4f4ef';
     const popRutaBorder = inRuta ? '#dc2626' : '#ccc';
     const popRutaColor = inRuta ? '#dc2626' : '#555';
@@ -980,8 +980,8 @@ function refreshMapMarkers() {
     if(!hasUserInteracted) {
       mapInstance.fitBounds(toShow.map(c=>[c.lat,c.lng]), {padding:[30,30], maxZoom: 13});
     }
-    // Si ya interactuó, restaurar vista
-    // (los marcadores ya se han añadido, el zoom se mantiene solo)
+    // Si ya interactuÃ³, restaurar vista
+    // (los marcadores ya se han aÃ±adido, el zoom se mantiene solo)
   }
 }
 
@@ -999,7 +999,7 @@ function popupToggleRuta(btn) {
   const id = popupGetId(btn);
   toggleRuta(id);
   const inR = rutaSelected.has(id);
-  btn.textContent = inR ? '✗ Quitar' : '✓ Ruta';
+  btn.textContent = inR ? 'â Quitar' : 'â Ruta';
   btn.style.background = inR ? '#fee2e2' : '#f4f4ef';
   btn.style.borderColor = inR ? '#dc2626' : '#ccc';
   btn.style.color = inR ? '#dc2626' : '#555';
@@ -1036,7 +1036,7 @@ function resetExcluded() {
 }
 
 function selectByStage() {
-  // Toggle: si todos los visibles están seleccionados, deselecciona; si no, selecciona
+  // Toggle: si todos los visibles estÃ¡n seleccionados, deselecciona; si no, selecciona
   const visible = getVisibleClients();
   const allSelected = visible.every(c => rutaSelected.has(c.id));
   visible.forEach(c => allSelected ? rutaSelected.delete(c.id) : rutaSelected.add(c.id));
@@ -1052,7 +1052,7 @@ function getVisibleClients() {
     if(c.etapa === 'perdido') return false;
     if(rutaFilterStage && c.etapa !== rutaFilterStage) return false;
     if(!(c.lat && c.lng || c.direccion || c.poblacion)) return false;
-    if(mft && (c.tipo_alojamiento||'').trim() !== mft) return false;
+    if(mft && (c.sector||'').trim() !== mft) return false;
     if(mfl && (c.poblacion||'').trim() !== mfl) return false;
     if(mfcArr.length>0 && !mfcArr.includes((c.comarca||'').trim())) return false;
     return true;
@@ -1065,20 +1065,20 @@ function renderRutas() {
 
   // Counters
   document.getElementById('ruta-total-count').textContent = totalSelected + ' parada' + (totalSelected!==1?'s':'');
-  document.getElementById('ruta-selected-info').textContent = totalSelected > 0 ? `· ${visible.length} en lista` : '';
+  document.getElementById('ruta-selected-info').textContent = totalSelected > 0 ? `Â· ${visible.length} en lista` : '';
   const mapCountEl = document.getElementById('map-count-info');
   if(mapCountEl) mapCountEl.textContent = visible.length + ' visibles';
 
   const list = document.getElementById('ruta-list');
   if(!visible.length) {
     list.innerHTML = `<div class="empty" style="padding:30px 14px;text-align:center;color:var(--muted);font-size:0.8rem;">
-      <div style="font-size:1.8rem;margin-bottom:8px;">🔍</div>
-      Sin resultados — ajusta los filtros
+      <div style="font-size:1.8rem;margin-bottom:8px;">ð</div>
+      Sin resultados â ajusta los filtros
     </div>`;
     return;
   }
 
-  // Order: selected (in order) → unselected → excluded
+  // Order: selected (in order) â unselected â excluded
   const selectedIds = [...rutaSelected];
   const inRutaList  = selectedIds.map(id => clients.find(c=>c.id===id)).filter(Boolean);
   const notSelected = visible.filter(c => !rutaSelected.has(c.id) && !rutaExcluded.has(c.id));
@@ -1103,18 +1103,18 @@ function renderRutas() {
         <div class="ruta-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.nombre}</div>
         <div style="font-size:0.72rem;color:var(--muted);display:flex;gap:5px;align-items:center;">
           <span style="color:${color};font-weight:700;text-transform:uppercase;font-size:0.62rem;">${stageLabels[c.etapa]}</span>
-          <span>${c.poblacion||'—'}</span>
-          ${c.tipo_alojamiento ? '<span style="opacity:.7">'+c.tipo_alojamiento+'</span>' : ''}
+          <span>${c.poblacion||'â'}</span>
+          ${c.sector ? '<span style="opacity:.7">'+c.sector+'</span>' : ''}
         </div>
         ${c.telefono ? '<div style="font-size:0.7rem;color:var(--muted);font-family:var(--mono);">'+c.telefono+'</div>' : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
         <button onclick="openModal('${c.id}')" title="Abrir ficha"
-          style="font-size:0.65rem;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface);cursor:pointer;">📋</button>
-        ${c.web ? '<a href="'+(c.web.startsWith('http')?c.web:'https://'+c.web)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Abrir web" style="font-size:0.65rem;padding:2px 5px;border:1px solid #bfdbfe;border-radius:4px;background:#eff6ff;color:#1d4ed8;text-decoration:none;text-align:center;display:block;">🌐</a>' : ''}
-        ${(c.lat && c.lng) ? '<a href="https://www.google.com/maps?q='+c.lat+','+c.lng+'&ll='+c.lat+','+c.lng+'&z=19&t=k" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Ver satélite Google Maps" style="font-size:0.65rem;padding:2px 5px;border:1px solid #bbf7d0;border-radius:4px;background:#f0fdf4;color:#15803d;text-decoration:none;text-align:center;display:block;">🛰️</a>' : ''}
+          style="font-size:0.65rem;padding:2px 5px;border:1px solid var(--border);border-radius:4px;background:var(--surface);cursor:pointer;">ð</button>
+        ${c.web ? '<a href="'+(c.web.startsWith('http')?c.web:'https://'+c.web)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Abrir web" style="font-size:0.65rem;padding:2px 5px;border:1px solid #bfdbfe;border-radius:4px;background:#eff6ff;color:#1d4ed8;text-decoration:none;text-align:center;display:block;">ð</a>' : ''}
+        ${(c.lat && c.lng) ? '<a href="https://www.google.com/maps?q='+c.lat+','+c.lng+'&ll='+c.lat+','+c.lng+'&z=19&t=k" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Ver satÃ©lite Google Maps" style="font-size:0.65rem;padding:2px 5px;border:1px solid #bbf7d0;border-radius:4px;background:#f0fdf4;color:#15803d;text-decoration:none;text-align:center;display:block;">ð°ï¸</a>' : ''}
         <button onclick="toggleExclude('${c.id}')" title="${isExcl?'Recuperar':'Descartar del mapa'}"
-          style="font-size:0.65rem;padding:2px 5px;border:1px solid ${isExcl?'#16a34a':'#fca5a5'};border-radius:4px;background:${isExcl?'#f0fdf4':'#fff5f5'};color:${isExcl?'#16a34a':'#dc2626'};cursor:pointer;">${isExcl?'↩':'✕'}</button>
+          style="font-size:0.65rem;padding:2px 5px;border:1px solid ${isExcl?'#16a34a':'#fca5a5'};border-radius:4px;background:${isExcl?'#f0fdf4':'#fff5f5'};color:${isExcl?'#16a34a':'#dc2626'};cursor:pointer;">${isExcl?'â©':'â'}</button>
       </div>
     </div>`;
   }).join('');
@@ -1140,11 +1140,11 @@ function openGMapsRoute() {
     alert('Selecciona al menos un cliente marcando las casillas del panel izquierdo.');
     return;
   }
-  // Mantener orden de selección
+  // Mantener orden de selecciÃ³n
   const ordered = [...rutaSelected]
     .map(id => clients.find(c => c.id === id))
     .filter(c => c && (c.lat && c.lng || c.direccion || c.poblacion));
-  if(!ordered.length) { alert('Los clientes seleccionados no tienen dirección ni coordenadas.'); return; }
+  if(!ordered.length) { alert('Los clientes seleccionados no tienen direcciÃ³n ni coordenadas.'); return; }
   const stops = ordered.map(c => c.lat && c.lng
     ? `${c.lat},${c.lng}`
     : encodeURIComponent([c.direccion,c.poblacion,c.provincia,c.pais].filter(Boolean).join(', '))
@@ -1173,7 +1173,7 @@ function closeModal() { document.getElementById('modal-overlay').classList.remov
 function closeModalOutside(e) { if(e.target.id==='modal-overlay') closeModal(); }
 
 function renderActivityLog(acts) {
-  const icons = {llamada:'📞',reunión:'🤝',reunion:'🤝',email:'✉️',visita:'🚗',default:'📌'};
+  const icons = {llamada:'ð',reuniÃ³n:'ð¤',reunion:'ð¤',email:'âï¸',visita:'ð',default:'ð'};
   const log = document.getElementById('activity-log');
   if(!acts.length) { log.innerHTML = `<div style="color:var(--muted);font-size:0.78rem;padding:4px 0;">Sin actividad.</div>`; return; }
   log.innerHTML = acts.slice().reverse().map(a => {
@@ -1221,7 +1221,7 @@ function saveClient() {
 }
 
 function deleteClient() {
-  if(!editingId || !confirm('¿Eliminar?')) return;
+  if(!editingId || !confirm('Â¿Eliminar?')) return;
   clients = clients.filter(c=>c.id!==editingId);
   save(); closeModal(); renderKanban(); renderTable(); renderRutas();
   if(mapInstance) refreshMapMarkers();
@@ -1261,7 +1261,7 @@ function importExcel(input) {
         else { if(!obj.id) obj.id = uid(); obj.activities = []; clients.push(obj); imp++; }
       }
       save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable(); renderRutas();
-      alert(`✅ ${imp} nuevos · ${upd} actualizados`);
+      alert(`â ${imp} nuevos Â· ${upd} actualizados`);
     } catch(err) { alert('Error: '+err.message); }
     input.value='';
   };
@@ -1270,8 +1270,8 @@ function importExcel(input) {
 
 function exportExcel() {
   const wb = XLSX.utils.book_new();
-  const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','',''];
-  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.'];
+  const section = ['IDENTIFICACIÃN','','','','','','','','','LOCALIZACIÃN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','',''];
+  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','TelÃ©fono 1','TelÃ©fono 2','Cargo','Web','DirecciÃ³n','PoblaciÃ³n','Provincia','CP','PaÃ­s','Latitud','Longitud','Etapa','Prioridad','Valor (â¬)','Prob (%)','Origen','PrÃ³x.Contacto','Notas','Alta','Ãlt.Act.'];
   const data = clients.map(c => [c.id||'',c.nombre||'',c.empresa||'',c.nif||'',c.email||'',c.telefono||'',c.telefono2||'',c.cargo||'',c.web||'',c.direccion||'',c.poblacion||'',c.provincia||'',c.cp||'',c.pais||'',c.lat||'',c.lng||'',c.etapa||'',c.prioridad||'',c.valor||'',c.prob||'',c.origen||'',c.siguiente||'',c.notas||'',c.created||'',(c.activities&&c.activities.length?c.activities[c.activities.length-1].date:'')]);
   const ws = XLSX.utils.aoa_to_sheet([section,header,...data]);
   ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:8}},{s:{r:0,c:9},e:{r:0,c:15}},{s:{r:0,c:16},e:{r:0,c:21}},{s:{r:0,c:22},e:{r:0,c:24}}];
@@ -1307,7 +1307,7 @@ function handlePhoto(input) {
   const reader = new FileReader();
   reader.onload = e => {
     capturePhoto = e.target.result;
-    document.getElementById('capture-drop-content').innerHTML = `<img src="${capturePhoto}" class="capture-preview"><div style="margin-top:8px;font-size:0.82rem;color:var(--cerrado)">✓ Foto lista — toca para cambiar</div>`;
+    document.getElementById('capture-drop-content').innerHTML = `<img src="${capturePhoto}" class="capture-preview"><div style="margin-top:8px;font-size:0.82rem;color:var(--cerrado)">â Foto lista â toca para cambiar</div>`;
     document.getElementById('capture-drop-label').classList.add('has-file');
   };
   reader.readAsDataURL(file);
@@ -1323,9 +1323,9 @@ async function processCapture() {
   const apiKey = localStorage.getItem(KEY_API);
   if(!apiKey) { alert('Configura tu API Key primero'); return; }
   const notes = document.getElementById('capture-notes').value.trim();
-  if(!capturePhoto && !notes) { alert('Añade foto o escribe algo'); return; }
+  if(!capturePhoto && !notes) { alert('AÃ±ade foto o escribe algo'); return; }
 
-  showStatus('⏳ Analizando con Claude...', 'info');
+  showStatus('â³ Analizando con Claude...', 'info');
   const existingNames = clients.map(c => `${c.nombre}${c.empresa?' ('+c.empresa+')':''}`).slice(0, 60).join(', ');
   const prompt = `Eres un asistente comercial. Analiza la imagen y/o notas del comercial y extrae los datos del cliente.
 
@@ -1333,20 +1333,20 @@ Clientes existentes en el CRM (referencia para detectar duplicados): ${existingN
 
 Notas del comercial: "${notes || '(sin notas, solo imagen)'}".
 
-Devuelve SOLO JSON válido con esta estructura exacta, sin markdown:
+Devuelve SOLO JSON vÃ¡lido con esta estructura exacta, sin markdown:
 {
   "nombre": "nombre del contacto o persona",
   "empresa": "nombre de la empresa/establecimiento",
-  "telefono": "teléfono si aparece",
+  "telefono": "telÃ©fono si aparece",
   "email": "email si aparece",
   "poblacion": "ciudad o pueblo",
   "etapa_sugerida": "lead|prospect|propuesta|negociacion|cerrado",
   "resumen": "resumen breve de una o dos frases",
   "actividad": "frase corta para log de actividad tipo 'Visita - pide presupuesto X'",
-  "posible_duplicado": "nombre del cliente existente si ya está en el CRM, o vacío"
+  "posible_duplicado": "nombre del cliente existente si ya estÃ¡ en el CRM, o vacÃ­o"
 }
 
-Si un campo no aparece, devuelve "". Etapa: pide presupuesto→propuesta, contacto inicial→lead, negociación avanzada→negociacion.`;
+Si un campo no aparece, devuelve "". Etapa: pide presupuestoâpropuesta, contacto inicialâlead, negociaciÃ³n avanzadaânegociacion.`;
 
   try {
     const content = [{type:'text', text: prompt}];
@@ -1379,11 +1379,11 @@ Si un campo no aparece, devuelve "". Etapa: pide presupuesto→propuesta, contac
     document.getElementById('ai-etapa').value = parsed.etapa_sugerida || 'lead';
     document.getElementById('ai-notas').value = parsed.resumen || '';
     document.getElementById('ai-actividad').value = parsed.actividad || '';
-    let msg = '✅ Datos extraídos. Revisa y guarda.';
-    if(parsed.posible_duplicado) msg += ` ⚠️ Posible duplicado: ${parsed.posible_duplicado}`;
+    let msg = 'â Datos extraÃ­dos. Revisa y guarda.';
+    if(parsed.posible_duplicado) msg += ` â ï¸ Posible duplicado: ${parsed.posible_duplicado}`;
     showStatus(msg, parsed.posible_duplicado ? 'info' : 'success');
     document.getElementById('ai-result').style.display = 'block';
-  } catch(err) { showStatus('❌ Error: ' + err.message, 'error'); }
+  } catch(err) { showStatus('â Error: ' + err.message, 'error'); }
 }
 
 function saveCapture() {
@@ -1396,7 +1396,7 @@ function saveCapture() {
     telefono: document.getElementById('ai-telefono').value.trim(),
     email: document.getElementById('ai-email').value.trim(),
     poblacion: document.getElementById('ai-poblacion').value.trim(),
-    provincia: '', pais: 'España', cp: '', direccion: '', cargo: '', web: '',
+    provincia: '', pais: 'EspaÃ±a', cp: '', direccion: '', cargo: '', web: '',
     lat: null, lng: null,
     etapa: document.getElementById('ai-etapa').value,
     prioridad: 'media', valor: null, prob: null, origen: 'visita', siguiente: '',
@@ -1406,7 +1406,7 @@ function saveCapture() {
   };
   clients.push(c); save(); closeCapture();
   renderKanban(); renderTable(); renderRutas();
-  alert(`✅ "${c.nombre}" añadido al CRM`);
+  alert(`â "${c.nombre}" aÃ±adido al CRM`);
 }
 
 function mergeCapture() {
@@ -1418,7 +1418,7 @@ function mergeCapture() {
     (nombre && (c.empresa||'').toLowerCase().includes(nombre)));
   if(!matches.length) { alert('No encontrado. Usa "Guardar como nuevo".'); return; }
   const list = matches.map((c,i) => `${i+1}. ${c.nombre}${c.empresa?' - '+c.empresa:''}`).join('\n');
-  const choice = prompt(`¿A qué cliente añadir?\n\n${list}\n\nNúmero:`);
+  const choice = prompt(`Â¿A quÃ© cliente aÃ±adir?\n\n${list}\n\nNÃºmero:`);
   const idx = parseInt(choice)-1;
   if(isNaN(idx) || idx<0 || idx>=matches.length) return;
   const target = matches[idx];
@@ -1432,7 +1432,7 @@ function mergeCapture() {
   if(order.indexOf(nueva) > order.indexOf(target.etapa)) target.etapa = nueva;
   save(); closeCapture();
   renderKanban(); renderTable(); renderRutas();
-  alert(`✅ Actividad añadida a "${target.nombre}"`);
+  alert(`â Actividad aÃ±adida a "${target.nombre}"`);
 }
 
 function updateDbIndicator() {
@@ -1440,11 +1440,11 @@ function updateDbIndicator() {
   const el = document.getElementById('db-indicator');
   if(!el) return;
   if(name) {
-    el.textContent = '📊 ' + name;
+    el.textContent = 'ð ' + name;
     el.title = 'Base de datos activa: ' + name;
     el.style.color = 'var(--accent)';
   } else if(clients.length > 0) {
-    el.textContent = '📊 localStorage (' + clients.length + ' clientes)';
+    el.textContent = 'ð localStorage (' + clients.length + ' clientes)';
     el.title = 'Datos cargados desde el navegador';
     el.style.color = 'var(--muted)';
   } else {
@@ -1453,9 +1453,9 @@ function updateDbIndicator() {
 }
 
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 // GOOGLE DRIVE SYNC
-// ══════════════════════════════════════════════════════════════════════════════
+// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const DRIVE_CLIENT_ID = '361982399748-ql6n36499tvcsqi9q68t8qdudsmonec0.apps.googleusercontent.com';
 const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_KEY = 'pipecrm_drive_file_id';
@@ -1476,21 +1476,21 @@ function initDrive() {
       if (t.expires_at && Date.now() < t.expires_at) {
         driveToken = t.access_token;
         driveConnected = true;
-        updateDriveStatus('connected', '☁️ Drive conectado');
+        updateDriveStatus('connected', 'âï¸ Drive conectado');
         return;
       }
     } catch(e) {}
   }
-  updateDriveStatus('disconnected', '☁️ Conectar Drive');
+  updateDriveStatus('disconnected', 'âï¸ Conectar Drive');
 }
 
 function handleDriveConnect() {
   if (driveConnected) {
-    if (confirm('¿Desconectar Google Drive?')) {
+    if (confirm('Â¿Desconectar Google Drive?')) {
       driveToken = null;
       driveConnected = false;
       localStorage.removeItem(DRIVE_TOKEN_KEY);
-      updateDriveStatus('disconnected', '☁️ Conectar Drive');
+      updateDriveStatus('disconnected', 'âï¸ Conectar Drive');
     }
     return;
   }
@@ -1505,13 +1505,13 @@ function handleDriveConnect() {
       }
       driveToken = response.access_token;
       driveConnected = true;
-      // Guardar token con expiración
+      // Guardar token con expiraciÃ³n
       const tokenData = {
         access_token: response.access_token,
         expires_at: Date.now() + (response.expires_in - 60) * 1000
       };
       localStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify(tokenData));
-      updateDriveStatus('connected', '☁️ Drive conectado');
+      updateDriveStatus('connected', 'âï¸ Drive conectado');
       // Si hay cambios pendientes, sincronizar
       if (unsavedChanges) autoSaveToDrive();
     }
@@ -1542,7 +1542,7 @@ function markSaved() {
 async function autoSaveToDrive() {
   if (!driveConnected || !driveToken || driveSyncing) return;
   driveSyncing = true;
-  updateDriveStatus('syncing', '⏳ Guardando...');
+  updateDriveStatus('syncing', 'â³ Guardando...');
   try {
     const xlsxBlob = generateXlsxBlob();
     if (driveFileId) {
@@ -1552,19 +1552,19 @@ async function autoSaveToDrive() {
       localStorage.setItem(DRIVE_FILE_KEY, driveFileId);
     }
     markSaved();
-    updateDriveStatus('connected', '☁️ Guardado ✓');
+    updateDriveStatus('connected', 'âï¸ Guardado â');
     setTimeout(() => {
-      if (!unsavedChanges) updateDriveStatus('connected', '☁️ Drive conectado');
+      if (!unsavedChanges) updateDriveStatus('connected', 'âï¸ Drive conectado');
     }, 2500);
   } catch(err) {
     console.error('Drive sync error:', err);
-    updateDriveStatus('disconnected', '⚠️ Error al guardar');
-    // Si el token expiró, reconectar
+    updateDriveStatus('disconnected', 'â ï¸ Error al guardar');
+    // Si el token expirÃ³, reconectar
     if (err.status === 401) {
       driveConnected = false;
       driveToken = null;
       localStorage.removeItem(DRIVE_TOKEN_KEY);
-      setTimeout(() => updateDriveStatus('disconnected', '☁️ Reconectar Drive'), 2000);
+      setTimeout(() => updateDriveStatus('disconnected', 'âï¸ Reconectar Drive'), 2000);
     }
   } finally {
     driveSyncing = false;
@@ -1573,8 +1573,8 @@ async function autoSaveToDrive() {
 
 function generateXlsxBlob() {
   const wb = XLSX.utils.book_new();
-  const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','',''];
-  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.'];
+  const section = ['IDENTIFICACIÃN','','','','','','','','','LOCALIZACIÃN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','',''];
+  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','TelÃ©fono 1','TelÃ©fono 2','Cargo','Web','DirecciÃ³n','PoblaciÃ³n','Provincia','CP','PaÃ­s','Latitud','Longitud','Etapa','Prioridad','Valor (â¬)','Prob (%)','Origen','PrÃ³x.Contacto','Notas','Alta','Ãlt.Act.'];
   const data = clients.map(c => [
     c.id||'', c.nombre||'', c.empresa||'', c.nif||'', c.email||'',
     c.telefono||'', c.telefono2||'', c.cargo||'', c.web||'',
@@ -1634,7 +1634,7 @@ async function importFromDrive() {
     alert('Primero conecta con Google Drive');
     return;
   }
-  updateDriveStatus('syncing', '⏳ Cargando...');
+  updateDriveStatus('syncing', 'â³ Cargando...');
   try {
     // Buscar el archivo
     const searchResp = await fetch(
@@ -1643,8 +1643,8 @@ async function importFromDrive() {
     );
     const searchData = await searchResp.json();
     if (!searchData.files || !searchData.files.length) {
-      alert('No se encontró CRM_Urdaibai.xlsx en Drive');
-      updateDriveStatus('connected', '☁️ Drive conectado');
+      alert('No se encontrÃ³ CRM_Urdaibai.xlsx en Drive');
+      updateDriveStatus('connected', 'âï¸ Drive conectado');
       return;
     }
     const fileId = searchData.files[0].id;
@@ -1657,7 +1657,7 @@ async function importFromDrive() {
     );
     if (!fileResp.ok) throw new Error('Error al descargar');
     const arrayBuf = await fileResp.arrayBuffer();
-    // Parsear como si fuera importación normal
+    // Parsear como si fuera importaciÃ³n normal
     const wb = XLSX.read(arrayBuf, {type:'array'});
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
     let dataStart = 2;
@@ -1683,13 +1683,13 @@ async function importFromDrive() {
       else { if(!obj.id) obj.id = uid(); obj.activities = []; clients.push(obj); imp++; }
     }
     save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable();
-    updateDriveStatus('connected', '☁️ Drive conectado');
+    updateDriveStatus('connected', 'âï¸ Drive conectado');
     localStorage.setItem('pipecrm_db_name', 'CRM_Urdaibai.xlsx (Drive)');
     updateDbIndicator();
-    alert('✅ ' + imp + ' nuevos · ' + upd + ' actualizados desde Drive');
+    alert('â ' + imp + ' nuevos Â· ' + upd + ' actualizados desde Drive');
   } catch(err) {
     console.error(err);
-    updateDriveStatus('disconnected', '⚠️ Error al cargar');
+    updateDriveStatus('disconnected', 'â ï¸ Error al cargar');
     alert('Error al importar desde Drive: ' + err.message);
   }
 }
