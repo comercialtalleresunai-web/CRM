@@ -245,8 +245,10 @@
   <div style="padding:8px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);">
     <input class="search-input" id="funnel-search" placeholder="🔍 Buscar en funnel…"
            oninput="renderKanban()" style="max-width:240px;flex-shrink:0;">
-    <select class="filter-sel" id="funnel-comarca" multiple onchange="renderKanban()" style="max-width:180px;height:72px;" title="Ctrl+clic para varias comarcas">
+    <select class="filter-sel" id="funnel-comarca" onchange="renderKanban()" style="max-width:180px;">
+      <option value="">Todas las comarcas</option>
     </select>
+    <button class="filter-sel" onclick="clearFunnelFilters()" style="cursor:pointer;" title="Quitar todos los filtros">✕ Limpiar</button>
     <select class="filter-sel" id="funnel-tipo" onchange="renderKanban()" style="max-width:160px;">
       <option value="">Todos los tipos</option>
     </select>
@@ -272,10 +274,10 @@
       <option value="">Todos tipos</option>
     </select>
 
-    <select class="filter-sel" id="filter-comarca" multiple onchange="onComarcaFilterChange('clientes')" 
-      style="min-width:150px;height:72px;" title="Ctrl+clic para seleccionar varias comarcas">
+    <select class="filter-sel" id="filter-comarca" onchange="onComarcaFilterChange('clientes')" 
+      style="min-width:150px;">
     </select>
-    <span class="comarca-hint">⌃ varias</span>
+    <button class="filter-sel" onclick="clearTableFilters()" style="cursor:pointer;" title="Quitar todos los filtros">✕ Limpiar</button>
     <select class="filter-sel" id="filter-municipio" onchange="renderTable()" style="min-width:150px;">
       <option value="">Todos los municipios</option>
     </select>
@@ -302,8 +304,8 @@
   <!-- Barra de filtros: controlan qué aparece en el mapa -->
   <div class="toolbar" style="align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);">
     <span style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);font-weight:700;">FILTRAR MAPA:</span>
-    <select class="filter-sel" id="map-filter-comarca" multiple onchange="onComarcaFilterChange('map')"
-      style="font-size:.72rem;height:72px;max-width:160px;" title="Ctrl+clic para seleccionar varias comarcas">
+    <select class="filter-sel" id="map-filter-comarca" onchange="onComarcaFilterChange('map')"
+      style="font-size:.72rem;max-width:160px;">
     </select>
     <select class="filter-sel" id="map-filter-municipio" onchange="refreshMapView()" style="font-size:.72rem;height:30px;max-width:160px;">
       <option value="">Todos municipios</option>
@@ -357,6 +359,18 @@
       <div class="form-grid">
         <div class="form-group"><label>Nombre *</label><input type="text" id="f-nombre"></div>
         <div class="form-group"><label>Empresa</label><input type="text" id="f-empresa"></div>
+        <div class="form-group"><label>Sector</label>
+          <select class="form-sel" id="f-sector" onchange="toggleSectorFields()">
+            <option value="">— Sin clasificar —</option>
+            <option value="Alojamiento">Alojamiento</option>
+            <option value="Jardinería">Jardinería</option>
+            <option value="Forestal">Forestal</option>
+            <option value="Mantenimiento">Mantenimiento</option>
+            <option value="Ayuntamiento">Ayuntamiento</option>
+            <option value="Institución pública">Institución pública</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
         <div class="form-group"><label>NIF / DNI</label><input type="text" id="f-nif" placeholder="B12345678 / 12345678A"></div>
         <div class="form-group"><label>Email</label><input type="email" id="f-email"></div>
         <div class="form-group"><label>Teléfono 1</label><input type="tel" id="f-telefono"></div>
@@ -375,6 +389,7 @@
         <div class="form-group"><label>Latitud</label><input type="number" id="f-lat" step="any"></div>
         <div class="form-group"><label>Longitud</label><input type="number" id="f-lng" step="any"></div>
       </div>
+      <div id="sec-alojamiento">
       <hr class="section-sep">
       <p class="section-label">Establecimiento</p>
       <div class="form-grid">
@@ -389,6 +404,7 @@
         </div>
         <div class="form-group"><label>Capacidad (plazas)</label><input type="number" id="f-capacidad"></div>
         <div class="form-group"><label>Categoría / Estrellas</label><input type="text" id="f-categoria"></div>
+      </div>
       </div>
       <hr class="section-sep">
       <p class="section-label">Pipeline</p>
@@ -559,12 +575,26 @@ function renderStats() {
 
 let dragId = null;
 
+function clearFunnelFilters() {
+  const s = document.getElementById('funnel-search'); if(s) s.value = '';
+  const c = document.getElementById('funnel-comarca'); if(c) c.value = '';
+  const t = document.getElementById('funnel-tipo'); if(t) t.value = '';
+  window._kanbanExpanded = new Set();
+  renderKanban();
+}
+function clearTableFilters() {
+  const ids = ['search-input','filter-stage','filter-priority','filter-tipo','filter-comarca','filter-municipio'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  updateMunicipioDropdowns();
+  renderTable();
+}
+
 function renderKanban() {
   renderStats();
   // Populate funnel dropdowns
   const fcSel = document.getElementById('funnel-comarca');
   const ftSel = document.getElementById('funnel-tipo');
-  if(fcSel && fcSel.options.length === 0) {
+  if(fcSel && fcSel.options.length <= 1) {
     const cs = new Set(clients.map(c=>c.comarca).filter(Boolean));
     COMARCAS_ORDER.filter(c=>cs.has(c)).forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; fcSel.appendChild(o); });
     [...cs].filter(c=>!COMARCAS_ORDER.includes(c)).sort().forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; fcSel.appendChild(o); });
@@ -830,8 +860,9 @@ function populateFilters() {
   // Comarcas multi-select: preservar selección actual
   [document.getElementById('filter-comarca'), document.getElementById('map-filter-comarca')].forEach(sel => {
     if(!sel) return;
-    const prevSelected = [...sel.selectedOptions].map(o=>o.value).filter(Boolean);
-    sel.innerHTML = comarcas.map(c => `<option value="${c}"${prevSelected.includes(c)?' selected':''}>${c}</option>`).join('');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Todas las comarcas</option>' +
+      comarcas.map(c => `<option value="${c}"${c===prev?' selected':''}>${c}</option>`).join('');
   });
   // Municipios: se populan dinámicamente según comarca seleccionada
   updateMunicipioDropdowns();
@@ -1179,12 +1210,19 @@ function openGMapsRoute() {
   window.open(url,'_blank');
 }
 
+function toggleSectorFields() {
+  const sec = document.getElementById('f-sector').value;
+  const tieneDatos = (document.getElementById('f-tipo_alojamiento').value || document.getElementById('f-capacidad').value || document.getElementById('f-categoria').value);
+  document.getElementById('sec-alojamiento').style.display =
+    (sec === 'Alojamiento' || (!sec && tieneDatos)) ? '' : 'none';
+}
+
 function openModal(id) {
   editingId = id || null;
   const c = id ? clients.find(x=>x.id===id) : null;
   document.getElementById('modal-title').textContent = c ? 'Editar cliente' : 'Nuevo cliente';
   document.getElementById('btn-delete').style.display = c ? 'block' : 'none';
-  ['nombre','empresa','nif','email','telefono','telefono2','cargo','web','direccion','poblacion','provincia','cp','comarca','lat','lng','tipo_alojamiento','capacidad','categoria','etapa','prioridad','valor','siguiente','origen','prob','notas'].forEach(f => {
+  ['nombre','empresa','sector','nif','email','telefono','telefono2','cargo','web','direccion','poblacion','provincia','cp','comarca','lat','lng','tipo_alojamiento','capacidad','categoria','etapa','prioridad','valor','siguiente','origen','prob','notas'].forEach(f => {
     const el = document.getElementById('f-'+f);
     if(el) el.value = c ? (c[f]||'') : (f==='etapa'?'lead':f==='prioridad'?'media':'');
   });
@@ -1192,6 +1230,7 @@ function openModal(id) {
   document.getElementById('new-activity').value = '';
   document.getElementById('activity-log')._pending = [];
   document.getElementById('modal-overlay').classList.add('open');
+  toggleSectorFields();
 }
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); editingId=null; }
 function closeModalOutside(e) { if(e.target.id==='modal-overlay') closeModal(); }
@@ -1226,7 +1265,7 @@ function saveClient() {
   const nombre = document.getElementById('f-nombre').value.trim();
   if(!nombre) { alert('Nombre obligatorio'); return; }
   const data = {};
-  ['nombre','empresa','nif','email','telefono','telefono2','cargo','web','direccion','poblacion','provincia','cp','comarca','tipo_alojamiento','capacidad','categoria','etapa','prioridad','valor','siguiente','origen','notas'].forEach(f => data[f] = document.getElementById('f-'+f).value.trim() || '');
+  ['nombre','empresa','sector','nif','email','telefono','telefono2','cargo','web','direccion','poblacion','provincia','cp','comarca','tipo_alojamiento','capacidad','categoria','etapa','prioridad','valor','siguiente','origen','notas'].forEach(f => data[f] = document.getElementById('f-'+f).value.trim() || '');
   data.lat = parseFloat(document.getElementById('f-lat').value)||null;
   data.lng = parseFloat(document.getElementById('f-lng').value)||null;
   data.prob = parseInt(document.getElementById('f-prob').value)||null;
