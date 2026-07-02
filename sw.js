@@ -1,6 +1,5 @@
-const CACHE = 'crm-urdaibai-v1';
+const CACHE = 'crm-urdaibai-v2';
 const ASSETS = [
-  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -25,11 +24,30 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.url.includes('googleapis.com') ||
-      e.request.url.includes('accounts.google.com')) {
+  const url = e.request.url;
+
+  // APIs de Google: siempre red, sin cachear
+  if (url.includes('googleapis.com') || url.includes('accounts.google.com')) {
     e.respondWith(fetch(e.request));
     return;
   }
+
+  // HTML (navegación): NETWORK FIRST — así las actualizaciones llegan siempre,
+  // y la caché solo se usa sin conexión
+  if (e.request.mode === 'navigate' || url.endsWith('.html') || url.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(cache => cache.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Resto de assets: cache first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
