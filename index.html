@@ -214,6 +214,29 @@
   select[multiple] option { padding: 4px 8px; border-radius: 4px; margin: 1px 0; }
   select[multiple] option:checked { background: var(--accent); color: white; }
   .comarca-hint { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); align-self: center; }
+
+  /* ── Agenda ── */
+  .agenda-wrap { padding: 14px; max-width: 760px; margin: 0 auto; }
+  .agenda-group { margin-bottom: 18px; }
+  .agenda-group-title { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; display:flex; align-items:center; gap:6px; }
+  .agenda-group-title .cnt { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 0 7px; font-size: 0.68rem; }
+  .agenda-item { display:flex; align-items:center; gap:10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; }
+  .agenda-item.vencida { border-left: 3px solid #dc2626; }
+  .agenda-item.hoy { border-left: 3px solid #ea580c; }
+  .agenda-item.semana { border-left: 3px solid #2563eb; }
+  .agenda-item.futura { border-left: 3px solid var(--border); }
+  .agenda-fecha { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); min-width: 52px; text-align:center; }
+  .agenda-info { flex: 1; min-width: 0; }
+  .agenda-cliente { font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+  .agenda-cliente:hover { color: var(--accent); }
+  .agenda-texto { font-size: 0.76rem; color: var(--muted); overflow:hidden; text-overflow:ellipsis; }
+  .agenda-actions { display:flex; gap:4px; flex-shrink:0; }
+  .agenda-actions button { border:1px solid var(--border); background: var(--card); border-radius: 7px; padding: 5px 8px; cursor:pointer; font-size: 0.8rem; }
+  .agenda-actions button:hover { border-color: var(--accent); }
+  .agenda-empty { color: var(--muted); font-size: 0.8rem; font-family: var(--mono); padding: 20px; text-align: center; }
+  .quick-acts { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+  .quick-acts button { border:1px solid var(--border); background:var(--card); border-radius:7px; padding:5px 9px; cursor:pointer; font-size:0.74rem; }
+  .quick-acts button:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -224,6 +247,7 @@
     <button class="tab-btn active" onclick="switchTab('funnel',event)">Funnel</button>
     <button class="tab-btn" onclick="switchTab('clientes',event)">Clientes</button>
     <button class="tab-btn" onclick="switchTab('rutas',event)">Mapa</button>
+    <button class="tab-btn" onclick="switchTab('agenda',event)">Agenda <span id="agenda-badge" style="display:none;background:#dc2626;color:#fff;border-radius:9px;padding:0 6px;font-size:0.65rem;margin-left:2px;"></span></button>
   </div>
   <div class="nav-actions">
     <span id="db-indicator" style="font-size:0.68rem;color:var(--muted);font-family:var(--mono);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="Base de datos activa"></span>
@@ -255,6 +279,45 @@
     <span id="funnel-match-info" style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);"></span>
   </div>
   <div class="kanban" id="kanban-board"></div>
+</div>
+
+<div class="view" id="view-agenda">
+  <div class="agenda-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span style="font-family:var(--mono);font-size:0.78rem;color:var(--muted);" id="agenda-resumen"></span>
+      <button class="nav-btn primary" onclick="openTaskModal()">+ Tarea</button>
+    </div>
+    <div id="agenda-list"></div>
+  </div>
+</div>
+
+<div class="overlay" id="task-overlay" onclick="if(event.target.id==='task-overlay')closeTaskModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header"><h3>Nueva tarea</h3><button class="modal-close" onclick="closeTaskModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid full">
+        <div class="form-group"><label>Cliente</label>
+          <input type="text" id="t-cliente" list="task-client-options" placeholder="Buscar cliente…">
+          <datalist id="task-client-options"></datalist>
+        </div>
+        <div class="form-group"><label>Fecha *</label><input type="date" id="t-fecha"></div>
+        <div class="form-group"><label>Tipo</label>
+          <select class="form-sel" id="t-tipo">
+            <option value="llamada">📞 Llamada</option>
+            <option value="visita">🚗 Visita</option>
+            <option value="email">✉️ Email</option>
+            <option value="whatsapp">💬 WhatsApp</option>
+            <option value="otro">📌 Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Descripción</label><input type="text" id="t-texto" placeholder="Ej: llevar catálogo Stihl"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeTaskModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveTask()">Guardar</button>
+    </div>
+  </div>
 </div>
 
 <div class="view" id="view-clientes">
@@ -439,6 +502,12 @@
       </div>
       <hr class="section-sep">
       <p class="section-label">Actividad</p>
+      <div class="quick-acts">
+        <button onclick="quickActivity('📞 Llamada realizada')">📞 Llamada</button>
+        <button onclick="quickActivity('🚗 Visita realizada')">🚗 Visita</button>
+        <button onclick="quickActivity('✉️ Email enviado')">✉️ Email</button>
+        <button onclick="quickActivity('💬 WhatsApp enviado')">💬 WhatsApp</button>
+      </div>
       <div id="activity-log" class="activities"></div>
       <div class="add-activity">
         <input type="text" id="new-activity" placeholder="Registrar actividad…">
@@ -529,6 +598,7 @@ const KEY_API = 'pipecrm_anthropic_key';
 let clients = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
 // Migracion: renombrar etapa antigua 'prospect' a 'contacto'
 clients.forEach(c => { if(c.etapa === 'prospect') c.etapa = 'contacto'; });
+setTimeout(() => { if(typeof updateAgendaBadge==='function') updateAgendaBadge(); }, 100);
 let editingId = null;
 let capturePhoto = null;
 const stages = ['lead','contacto','propuesta','negociacion','cerrado','perdido'];
@@ -552,6 +622,7 @@ function switchTab(tab, ev) {
   if(tab==='funnel') renderKanban();
   if(tab==='clientes') renderTable();
   if(tab==='rutas') { populateFilters(); renderRutas(); setTimeout(initMap, 50); }
+  if(tab==='agenda') renderAgenda();
 }
 
 function renderStats() {
@@ -574,6 +645,153 @@ function renderStats() {
 }
 
 let dragId = null;
+
+// ══════════ AGENDA / TAREAS ══════════
+const TASKS_KEY = 'pipecrm_tasks_v1';
+let tasks = JSON.parse(localStorage.getItem(TASKS_KEY) || '[]');
+function saveTasks() { localStorage.setItem(TASKS_KEY, JSON.stringify(tasks)); updateAgendaBadge(); }
+
+const TIPO_ICONS = {llamada:'📞', visita:'🚗', email:'✉️', whatsapp:'💬', otro:'📌', contacto:'🔔'};
+
+function hoyISO() { return new Date().toISOString().slice(0,10); }
+
+// Reúne items: tareas manuales pendientes + próximos contactos de las fichas
+function getAgendaItems() {
+  const items = [];
+  tasks.filter(t => !t.done).forEach(t => {
+    const c = clients.find(x => x.id === t.clienteId);
+    items.push({ kind:'task', id:t.id, clienteId:t.clienteId,
+      cliente: c ? c.nombre : (t.clienteNombre || 'Sin cliente'),
+      fecha: t.fecha, tipo: t.tipo || 'otro', texto: t.texto || '' });
+  });
+  clients.forEach(c => {
+    if(c.siguiente) items.push({ kind:'contacto', id:'sig-'+c.id, clienteId:c.id,
+      cliente: c.nombre, fecha: c.siguiente, tipo:'contacto',
+      texto: 'Próximo contacto' + (c.etapa ? ' · ' + (stageLabels[c.etapa]||c.etapa) : '') });
+  });
+  items.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''));
+  return items;
+}
+
+function renderAgenda() {
+  const list = document.getElementById('agenda-list');
+  if(!list) return;
+  const items = getAgendaItems();
+  const hoy = hoyISO();
+  const en7 = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
+  const groups = { vencida:[], hoy:[], semana:[], futura:[] };
+  items.forEach(it => {
+    if(!it.fecha || it.fecha < hoy) groups.vencida.push(it);
+    else if(it.fecha === hoy) groups.hoy.push(it);
+    else if(it.fecha <= en7) groups.semana.push(it);
+    else groups.futura.push(it);
+  });
+  const titles = { vencida:['🔴 Vencidas','#dc2626'], hoy:['🟠 Hoy','#ea580c'], semana:['🔵 Próximos 7 días','#2563eb'], futura:['⚪ Más adelante','var(--muted)'] };
+  let htmlOut = '';
+  Object.keys(groups).forEach(g => {
+    if(!groups[g].length) return;
+    htmlOut += '<div class="agenda-group"><div class="agenda-group-title" style="color:'+titles[g][1]+'">'+titles[g][0]+' <span class="cnt">'+groups[g].length+'</span></div>';
+    groups[g].forEach(it => {
+      const f = it.fecha ? it.fecha.slice(8,10)+'/'+it.fecha.slice(5,7) : '—';
+      htmlOut += '<div class="agenda-item '+g+'">'
+        + '<div class="agenda-fecha">'+f+'</div>'
+        + '<div style="font-size:1rem;">'+(TIPO_ICONS[it.tipo]||'📌')+'</div>'
+        + '<div class="agenda-info">'
+        +   '<div class="agenda-cliente" onclick="openModal(\''+it.clienteId+'\')">'+it.cliente+'</div>'
+        +   '<div class="agenda-texto">'+it.texto+'</div>'
+        + '</div>'
+        + '<div class="agenda-actions">'
+        +   '<button title="Marcar como hecha" onclick="completeAgendaItem(\''+it.kind+'\',\''+it.id+'\')">✓</button>'
+        +   '<button title="Posponer 7 días" onclick="postponeAgendaItem(\''+it.kind+'\',\''+it.id+'\')">⏩</button>'
+        +   (it.kind==='task' ? '<button title="Eliminar" onclick="deleteTask(\''+it.id+'\')">🗑</button>' : '')
+        + '</div></div>';
+    });
+    htmlOut += '</div>';
+  });
+  list.innerHTML = htmlOut || '<div class="agenda-empty">Sin tareas ni contactos pendientes.<br>Usa «+ Tarea» o fija «Próximo contacto» en las fichas.</div>';
+  const nUrg = groups.vencida.length + groups.hoy.length;
+  document.getElementById('agenda-resumen').textContent = items.length + ' pendientes · ' + nUrg + ' urgentes';
+  updateAgendaBadge();
+}
+
+function updateAgendaBadge() {
+  const b = document.getElementById('agenda-badge');
+  if(!b) return;
+  const hoy = hoyISO();
+  const n = getAgendaItems().filter(it => !it.fecha || it.fecha <= hoy).length;
+  b.textContent = n; b.style.display = n > 0 ? 'inline-block' : 'none';
+}
+
+// Completar: registra la interacción en el historial del cliente
+function completeAgendaItem(kind, id) {
+  const fechaHoy = new Date().toLocaleDateString('es-ES');
+  if(kind === 'task') {
+    const t = tasks.find(x => x.id === id); if(!t) return;
+    t.done = true; t.doneDate = hoyISO();
+    const c = clients.find(x => x.id === t.clienteId);
+    if(c) { c.activities = c.activities||[];
+      c.activities.push({ text: (TIPO_ICONS[t.tipo]||'📌')+' '+(t.texto||'Tarea')+' — completada', date: fechaHoy, id: uid() });
+      c._la = fechaHoy; }
+    saveTasks(); save();
+  } else {
+    const cid = id.replace('sig-','');
+    const c = clients.find(x => x.id === cid); if(!c) return;
+    c.activities = c.activities||[];
+    c.activities.push({ text: '🔔 Contacto realizado (agenda)', date: fechaHoy, id: uid() });
+    c._la = fechaHoy; c.siguiente = '';
+    save();
+    // Ofrecer programar el siguiente
+    if(confirm('Contacto registrado en ' + c.nombre + '.\n¿Programar próximo contacto en 7 días?')) {
+      c.siguiente = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
+      save();
+    }
+  }
+  renderAgenda();
+}
+
+function postponeAgendaItem(kind, id) {
+  const nueva = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
+  if(kind === 'task') {
+    const t = tasks.find(x => x.id === id); if(t) { t.fecha = nueva; saveTasks(); }
+  } else {
+    const c = clients.find(x => x.id === id.replace('sig-','')); if(c) { c.siguiente = nueva; save(); }
+  }
+  renderAgenda();
+}
+
+function deleteTask(id) {
+  if(!confirm('¿Eliminar esta tarea?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks(); renderAgenda();
+}
+
+// Modal de nueva tarea
+function openTaskModal() {
+  const dl = document.getElementById('task-client-options');
+  dl.innerHTML = clients.map(c => '<option value="'+(c.nombre||'').replace(/"/g,'&quot;')+'">').join('');
+  document.getElementById('t-cliente').value = '';
+  document.getElementById('t-fecha').value = hoyISO();
+  document.getElementById('t-texto').value = '';
+  document.getElementById('task-overlay').classList.add('open');
+}
+function closeTaskModal() { document.getElementById('task-overlay').classList.remove('open'); }
+function saveTask() {
+  const nombre = document.getElementById('t-cliente').value.trim();
+  const fecha = document.getElementById('t-fecha').value;
+  if(!fecha) { alert('La fecha es obligatoria'); return; }
+  const c = clients.find(x => (x.nombre||'').toLowerCase() === nombre.toLowerCase());
+  tasks.push({ id: uid(), clienteId: c ? c.id : null, clienteNombre: nombre,
+    fecha: fecha, tipo: document.getElementById('t-tipo').value,
+    texto: document.getElementById('t-texto').value.trim(), done: false });
+  saveTasks(); closeTaskModal(); renderAgenda();
+}
+
+// Botón rápido de interacción en la ficha
+function quickActivity(texto) {
+  const input = document.getElementById('new-activity');
+  input.value = texto;
+  addActivity();
+}
 
 function clearFunnelFilters() {
   const s = document.getElementById('funnel-search'); if(s) s.value = '';
@@ -1344,6 +1562,27 @@ function parseSheetRows(rows) {
   }
   return parsed;
 }
+function importTasksSheet(wb) {
+  if(!wb.SheetNames.includes('Tareas')) return 0;
+  const trows = XLSX.utils.sheet_to_json(wb.Sheets['Tareas'], {header:1, defval:''});
+  let n = 0;
+  for(let i=1; i<trows.length; i++){
+    const r = trows[i]; if(!r[0]) continue;
+    let fecha = r[3];
+    if(typeof fecha === 'number' && fecha > 10000 && fecha < 100000) {
+      const d = XLSX.SSF.parse_date_code(fecha);
+      fecha = d ? d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0') : '';
+    }
+    const obj = { id: r[0].toString(), clienteId: (r[1]||'').toString(), clienteNombre: (r[2]||'').toString(),
+      fecha: (fecha||'').toString(), tipo: (r[4]||'otro').toString(), texto: (r[5]||'').toString(),
+      done: (r[6]||'').toString().toUpperCase() === 'SI', doneDate: (r[7]||'').toString() };
+    const ex = tasks.find(t => t.id === obj.id);
+    if(ex) Object.assign(ex, obj); else { tasks.push(obj); n++; }
+  }
+  saveTasks();
+  return n;
+}
+
 function mergeParsed(parsed) {
   let imp=0, upd=0;
   parsed.forEach(obj => {
@@ -1367,6 +1606,7 @@ function importExcel(input) {
       const parsed = parseSheetRows(rows);
       if(!parsed.length) { alert('No se reconocieron datos. Comprueba que el Excel tiene fila de cabecera con "Nombre".'); input.value=''; return; }
       const res = mergeParsed(parsed);
+      importTasksSheet(wb);
       save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable(); renderRutas();
       alert('\u2713 ' + res.imp + ' nuevos \u00b7 ' + res.upd + ' actualizados');
     } catch(err) { alert('Error: '+err.message); }
@@ -1384,6 +1624,13 @@ function exportExcel() {
   ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:8}},{s:{r:0,c:9},e:{r:0,c:15}},{s:{r:0,c:16},e:{r:0,c:21}},{s:{r:0,c:22},e:{r:0,c:24}}];
   ws['!cols'] = header.map((_,i)=>({wch:[5,25,25,25,14,18,22,28,14,12,8,8,10,10,12,10,14,10,14,14,30,12,14][i]||14}));
   XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+  // Hoja de tareas
+  if(typeof tasks !== 'undefined' && tasks.length) {
+    const theader = ['ID','ClienteID','Cliente','Fecha','Tipo','Descripción','Hecha','FechaHecha'];
+    const tdata = tasks.map(t => [t.id||'', t.clienteId||'', t.clienteNombre||'', t.fecha||'', t.tipo||'', t.texto||'', t.done?'SI':'', t.doneDate||'']);
+    const tws = XLSX.utils.aoa_to_sheet([theader, ...tdata]);
+    XLSX.utils.book_append_sheet(wb, tws, 'Tareas');
+  }
   XLSX.writeFile(wb, `CRM_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
@@ -1770,6 +2017,7 @@ async function importFromDrive() {
     const parsed = parseSheetRows(rows);
     if(!parsed.length) throw new Error('No se reconocieron datos en el Excel de Drive');
     const res = mergeParsed(parsed);
+    importTasksSheet(wb);
     save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable();
     updateDriveStatus('connected', '\u2601\ufe0f Drive conectado');
     localStorage.setItem('pipecrm_db_name', 'CRM_Urdaibai.xlsx (Drive)');
