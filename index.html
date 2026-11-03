@@ -1173,7 +1173,7 @@ function initMap() {
   const el = document.getElementById('map'); if(!el) return;
   if(mapInstance) { mapInstance.invalidateSize(); refreshMapMarkers(); return; }
   mapInstance = L.map('map').setView([43.355, -2.650], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
   }).addTo(mapInstance);
   // Marcar cuando el usuario interactúa (mueve/zoom) para preservar su vista
