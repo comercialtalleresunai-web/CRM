@@ -419,7 +419,14 @@
 <div class="view" id="view-rutas">
   <!-- Barra de filtros: controlan qué aparece en el mapa -->
   <div class="toolbar" style="align-items:center;flex-wrap:wrap;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);">
-    <span style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);font-weight:700;">FILTRAR MAPA:</span>
+    <div style="position:relative;display:flex;align-items:center;">
+      <input type="search" id="map-search" class="filter-sel" placeholder="🔎 Buscar cliente…" autocomplete="off"
+        oninput="mapSearchChange(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();mapSearchChange(true);}"
+        style="font-size:.78rem;height:30px;width:190px;">
+    </div>
+    <button id="btn-prio-only" onclick="togglePrioOnly()" class="filter-sel" style="font-size:.72rem;height:30px;cursor:pointer;border-color:#f59e0b;color:#b45309;background:#fffbeb;" title="Clientes con visita o próximo contacto en la agenda (hasta 7 días, incluidas las retrasadas)">⭐ Prioritarias <span id="prio-count"></span></button>
+    <button onclick="addPrioToRuta()" class="filter-sel" style="font-size:.72rem;height:30px;cursor:pointer;" title="Añadir las prioritarias a Mi ruta">+ a la ruta</button>
+    <span style="font-size:0.72rem;color:var(--muted);font-family:var(--mono);font-weight:700;">FILTRAR:</span>
     <select class="filter-sel" id="map-filter-comarca" onchange="onComarcaFilterChange('map')"
       style="font-size:.72rem;max-width:160px;">
     </select>
@@ -1322,6 +1329,48 @@ let rutaSelected = new Set(); // IDs seleccionados para la ruta
 let rutaExcluded = new Set(); // IDs excluidos del mapa (sin jardín etc)
 let rutaFilterStage = '';     // filtro activo en panel izquierdo
 
+let mapPrioOnly = false;
+
+// Clientes prioritarios: visita (tarea) o próximo contacto en agenda con fecha <= hoy+7 (incluye retrasadas)
+function getPrioMap() {
+  const lim = addDaysISO(7), hoy = hoyISO(), m = new Map();
+  getAgendaItems().forEach(it => {
+    if(!it.clienteId || !it.fecha || it.fecha > lim) return;
+    if(it.tipo !== 'visita' && it.kind !== 'contacto') return;
+    const cur = m.get(it.clienteId);
+    if(!cur || it.fecha < cur.fecha) m.set(it.clienteId, { fecha: it.fecha, texto: it.texto, tipo: it.tipo, late: it.fecha < hoy, hoy: it.fecha === hoy });
+  });
+  return m;
+}
+function fmtFechaCorta(iso) { return iso ? iso.slice(8,10)+'/'+iso.slice(5,7) : ''; }
+function mapSearchMatch(c) {
+  const q = ((document.getElementById('map-search')||{}).value||'').trim().toLowerCase();
+  if(!q) return true;
+  return [c.nombre,c.empresa,c.poblacion,c.telefono,c.id].some(v => (v||'').toString().toLowerCase().includes(q));
+}
+function togglePrioOnly() {
+  mapPrioOnly = !mapPrioOnly;
+  const b = document.getElementById('btn-prio-only');
+  b.style.background = mapPrioOnly ? '#f59e0b' : '#fffbeb';
+  b.style.color = mapPrioOnly ? '#fff' : '#b45309';
+  if(mapInstance) mapInstance._userHasInteracted = false;
+  refreshMapView();
+}
+function addPrioToRuta() {
+  const prio = getPrioMap();
+  getVisibleClients().filter(c => prio.has(c.id)).sort((a,b) => prio.get(a.id).fecha.localeCompare(prio.get(b.id).fecha))
+    .forEach(c => rutaSelected.add(c.id));
+  refreshMapView();
+}
+function mapSearchChange(enter) {
+  if(mapInstance) mapInstance._userHasInteracted = false;
+  refreshMapView();
+  const q = (document.getElementById('map-search').value||'').trim();
+  if(!q || !mapInstance) return;
+  const found = getVisibleClients().filter(c => c.lat && c.lng && !rutaExcluded.has(c.id));
+  if(found.length === 1 || (enter && found.length)) focusClient(found[0].id);
+}
+
 function toggleExclude(id) {
   if(rutaExcluded.has(id)) rutaExcluded.delete(id);
   else { rutaExcluded.add(id); rutaSelected.delete(id); } // si excluyes, quita de ruta
@@ -1357,7 +1406,11 @@ function refreshMapMarkers() {
   const mfl = (document.getElementById('map-filter-municipio')||{value:''}).value;
   const mfcSel2 = document.getElementById('map-filter-comarca');
   const mfcArr2 = mfcSel2 ? [...mfcSel2.selectedOptions].map(o=>o.value).filter(Boolean) : [];
+  const prio = getPrioMap();
+  const pc = document.getElementById('prio-count'); if(pc) pc.textContent = '(' + prio.size + ')';
   const applyMapFilters = arr => arr.filter(c => {
+    if(!mapSearchMatch(c)) return false;
+    if(mapPrioOnly && !prio.has(c.id)) return false;
     if(mft && (c.sector||'').trim() !== mft) return false;
     if(mfl && (c.poblacion||'').trim() !== mfl) return false;
     if(mfcArr2.length>0 && !mfcArr2.includes((c.comarca||'').trim())) return false;
@@ -1379,7 +1432,16 @@ function refreshMapMarkers() {
         ${inRuta ? `<text x="15" y="19" text-anchor="middle" fill="white" font-size="10" font-weight="800" font-family="monospace">${[...rutaSelected].indexOf(c.id)+1}</text>` : `<circle cx="15" cy="15" r="4" fill="rgba(255,255,255,0.5)"/>`}
       </svg>`
     });
-    const m = L.marker([c.lat, c.lng], {icon}).addTo(mapInstance);
+    const pr = prio.get(c.id);
+    const iconFinal = pr ? L.divIcon({
+      className:'', iconSize:[36,36], iconAnchor:[18,18],
+      html: `<div style="position:relative;width:36px;height:36px;">
+        <div style="position:absolute;inset:0;border-radius:50%;border:3px solid ${pr.late?'#dc2626':'#f59e0b'};box-shadow:0 0 0 2px #fff,0 0 8px ${pr.late?'#dc2626':'#f59e0b'};"></div>
+        <div style="position:absolute;left:3px;top:3px;">${icon.options.html}</div>
+        <div style="position:absolute;right:-4px;top:-6px;font-size:14px;line-height:1;">⭐</div></div>`
+    }) : icon;
+    const m = L.marker([c.lat, c.lng], {icon: iconFinal, zIndexOffset: pr ? 1000 : 0}).addTo(mapInstance);
+    m._cid = c.id;
     const popWebUrl = c.web ? (c.web.startsWith('http') ? c.web : 'https://'+c.web) : '';
     const popMapsUrl = 'https://www.google.com/maps?q='+c.lat+','+c.lng+'&ll='+c.lat+','+c.lng+'&z=19&t=k';
     const popWebBtn = popWebUrl
@@ -1399,6 +1461,7 @@ function refreshMapMarkers() {
         + '<span class="stage-badge badge-'+c.etapa+'">'+stageLabels[c.etapa]+'</span>'
         + popTelHtml
       + '</div>'
+      + (pr ? '<div style="margin-top:6px;padding:4px 7px;border-radius:5px;background:'+(pr.late?'#fee2e2':'#fef3c7')+';color:'+(pr.late?'#991b1b':'#92400e')+';font-size:0.72rem;font-weight:700;">&#11088; Prioritaria · '+(pr.tipo==='visita'?'Visita':'Contacto')+' '+(pr.late?'retrasada ':'')+fmtFechaCorta(pr.fecha)+(pr.texto?'<br><span style="font-weight:400;">'+esc(pr.texto)+'</span>':'')+'</div>' : '')
       + '<div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap;">'
         + popWebBtn + popMapsBtn
       + '</div>'
@@ -1492,6 +1555,8 @@ function getVisibleClients() {
     if(c.etapa === 'perdido') return false;
     if(rutaFilterStage && c.etapa !== rutaFilterStage) return false;
     if(!(c.lat && c.lng || c.direccion || c.poblacion)) return false;
+    if(!mapSearchMatch(c)) return false;
+    if(mapPrioOnly && !getPrioMap().has(c.id)) return false;
     if(mft && (c.sector||'').trim() !== mft) return false;
     if(mfl && (c.poblacion||'').trim() !== mfl) return false;
     if(mfcArr.length>0 && !mfcArr.includes((c.comarca||'').trim())) return false;
@@ -1521,7 +1586,9 @@ function renderRutas() {
   // Order: selected (in order) → unselected → excluded
   const selectedIds = [...rutaSelected];
   const inRutaList  = selectedIds.map(id => clients.find(c=>c.id===id)).filter(Boolean);
-  const notSelected = visible.filter(c => !rutaSelected.has(c.id) && !rutaExcluded.has(c.id));
+  const prioM = getPrioMap();
+  const notSelected = visible.filter(c => !rutaSelected.has(c.id) && !rutaExcluded.has(c.id))
+    .sort((a,b) => (prioM.has(b.id)?1:0) - (prioM.has(a.id)?1:0) || (prioM.has(a.id) ? prioM.get(a.id).fecha.localeCompare(prioM.get(b.id).fecha) : 0));
   const excluded    = visible.filter(c => rutaExcluded.has(c.id));
   const ordered     = [...inRutaList, ...notSelected, ...excluded];
 
@@ -1542,6 +1609,7 @@ function renderRutas() {
       <div class="ruta-info" style="flex:1;min-width:0;">
         <div class="ruta-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.nombre}</div>
         <div style="font-size:0.72rem;color:var(--muted);display:flex;gap:5px;align-items:center;">
+          ${prioM.has(c.id) ? '<span title="'+esc(prioM.get(c.id).texto||'')+'" style="background:'+(prioM.get(c.id).late?'#fee2e2':'#fef3c7')+';color:'+(prioM.get(c.id).late?'#991b1b':'#92400e')+';font-weight:700;font-size:0.62rem;padding:0 4px;border-radius:3px;white-space:nowrap;">⭐ '+(prioM.get(c.id).tipo==='visita'?'Visita ':'Contacto ')+fmtFechaCorta(prioM.get(c.id).fecha)+'</span>' : ''}
           <span style="color:${color};font-weight:700;text-transform:uppercase;font-size:0.62rem;">${stageLabels[c.etapa]}</span>
           <span>${c.poblacion||'—'}</span>
           ${c.sector ? '<span style="opacity:.7">'+c.sector+'</span>' : ''}
@@ -1570,8 +1638,8 @@ function focusClient(id) {
   const c = clients.find(x=>x.id===id); if(!c) return;
   if(c.lat && c.lng && mapInstance) {
     mapInstance.flyTo([c.lat, c.lng], 15);
-    const m = mapMarkers.find(x => Math.abs(x.getLatLng().lat-c.lat)<0.0001);
-    if(m) m.openPopup();
+    const m = mapMarkers.find(x => x._cid === id);
+    if(m) setTimeout(() => m.openPopup(), 400);
   } else openModal(id);
 }
 
