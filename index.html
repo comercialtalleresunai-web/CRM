@@ -217,7 +217,47 @@
   .comarca-hint { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); align-self: center; }
 
   /* ── Agenda ── */
-  .agenda-wrap { padding: 14px; max-width: 760px; margin: 0 auto; }
+  .agenda-wrap { padding: 14px; max-width: 1200px; margin: 0 auto; }
+  .agenda-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px; }
+  .agenda-layout { display:grid; grid-template-columns: 330px minmax(0,1fr); gap:16px; align-items:start; }
+  .agenda-late { background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:10px; max-height: calc(100vh - 190px); overflow-y:auto; }
+  .agenda-late .agenda-group-title { color:#dc2626; }
+  .agenda-late .agenda-item { flex-wrap: wrap; }
+  .agenda-late .agenda-info { flex: 1 1 150px; }
+  .agenda-late .agenda-actions { width: 100%; justify-content: flex-end; }
+  .agenda-late-days { font-family: var(--mono); font-size:0.64rem; color:#dc2626; }
+  .cal-nav { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .cal-title { flex:1; text-align:center; font-weight:700; font-size:1rem; text-transform:capitalize; }
+  .cal-grid { display:grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap:4px; }
+  .cal-dow { font-family: var(--mono); font-size:0.66rem; text-align:center; color: var(--muted); padding:4px 0; text-transform:uppercase; }
+  .cal-cell { min-height:88px; background: var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 5px; cursor:pointer; overflow:hidden; }
+  .cal-cell:hover { border-color: var(--accent); }
+  .cal-cell.out { background: var(--card); opacity:.55; }
+  .cal-cell.today { border-color:#ea580c; box-shadow: inset 0 0 0 1px #ea580c; }
+  .cal-cell.sel { background: var(--accent-soft); border-color: var(--accent); }
+  .cal-num { font-family: var(--mono); font-size:0.7rem; color: var(--muted); display:flex; justify-content:space-between; align-items:center; }
+  .cal-num .cal-count { display:none; background:var(--accent); color:#fff; border-radius:9px; padding:0 5px; font-size:0.62rem; }
+  .cal-num .cal-count.late { background:#dc2626; }
+  .cal-chip { font-size:0.66rem; border-radius:4px; padding:1px 4px; margin-top:2px; background: var(--card); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-left:3px solid var(--accent); }
+  .cal-chip.late { border-left-color:#dc2626; background:#fef2f2; }
+  .cal-more { font-size:0.64rem; color: var(--muted); margin-top:2px; }
+  .cal-day-title { font-family: var(--mono); font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .nextsteps { margin:10px 0; padding:12px; border:1px solid var(--accent); background: var(--accent-soft); border-radius:10px; }
+  .nextsteps-title { font-size:0.74rem; font-family: var(--mono); font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#1e40af; margin-bottom:8px; }
+  .nextsteps-title small { font-weight:400; text-transform:none; letter-spacing:0; color: var(--ink-soft); }
+  .ns-row { display:grid; grid-template-columns: 1fr 150px 130px; gap:8px; }
+  .ns-chips { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .ns-chips button { border:1px solid var(--border); background: var(--surface); border-radius:7px; padding:4px 9px; cursor:pointer; font-size:0.72rem; }
+  .ns-chips button:hover { border-color: var(--accent); color: var(--accent); }
+  .ns-actions { display:flex; gap:8px; justify-content:flex-end; }
+  @media (max-width: 700px) {
+    .agenda-layout { grid-template-columns: 1fr; }
+    .agenda-late { max-height: 40vh; }
+    .cal-cell { min-height:48px; }
+    .cal-chip, .cal-more { display:none; }
+    .cal-num .cal-count { display:inline-block; }
+    .ns-row { grid-template-columns: 1fr; }
+  }
   .agenda-group { margin-bottom: 18px; }
   .agenda-group-title { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; display:flex; align-items:center; gap:6px; }
   .agenda-group-title .cnt { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 0 7px; font-size: 0.68rem; }
@@ -284,11 +324,23 @@
 
 <div class="view" id="view-agenda">
   <div class="agenda-wrap">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div class="agenda-head">
       <span style="font-family:var(--mono);font-size:0.78rem;color:var(--muted);" id="agenda-resumen"></span>
       <button class="nav-btn primary" onclick="openTaskModal()">+ Tarea</button>
     </div>
-    <div id="agenda-list"></div>
+    <div class="agenda-layout">
+      <div class="agenda-late" id="agenda-late"></div>
+      <div class="agenda-main">
+        <div class="cal-nav">
+          <button class="nav-btn" onclick="calMove(-1)" title="Mes anterior">‹</button>
+          <div class="cal-title" id="cal-title"></div>
+          <button class="nav-btn" onclick="calMove(1)" title="Mes siguiente">›</button>
+          <button class="nav-btn" onclick="calToday()">Hoy</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div id="cal-day"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -504,10 +556,35 @@
       <hr class="section-sep">
       <p class="section-label">Actividad</p>
       <div class="quick-acts">
-        <button onclick="quickActivity('📞 Llamada realizada')">📞 Llamada</button>
-        <button onclick="quickActivity('🚗 Visita realizada')">🚗 Visita</button>
-        <button onclick="quickActivity('✉️ Email enviado')">✉️ Email</button>
-        <button onclick="quickActivity('💬 WhatsApp enviado')">💬 WhatsApp</button>
+        <button onclick="quickActivity('📞 Llamada realizada','llamada')">📞 Llamada</button>
+        <button onclick="quickActivity('🚗 Visita realizada','visita')">🚗 Visita</button>
+        <button onclick="quickActivity('✉️ Email enviado','email')">✉️ Email</button>
+        <button onclick="quickActivity('💬 WhatsApp enviado','whatsapp')">💬 WhatsApp</button>
+      </div>
+      <div id="nextsteps" class="nextsteps" style="display:none">
+        <div class="nextsteps-title">➡️ Nuevos pasos <small id="ns-ctx"></small></div>
+        <div class="ns-row">
+          <div class="form-group"><label>¿Qué hay que hacer?</label><input type="text" id="ns-texto" placeholder="Ej: enviar presupuesto Avant 528" onkeydown="if(event.key==='Enter'){event.preventDefault();nsSave();}"></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="ns-fecha"></div>
+          <div class="form-group"><label>Tipo</label>
+            <select class="form-sel" id="ns-tipo">
+              <option value="llamada">📞 Llamada</option><option value="visita">🚗 Visita</option>
+              <option value="email">✉️ Email</option><option value="whatsapp">💬 WhatsApp</option>
+              <option value="otro">📌 Otro</option>
+            </select>
+          </div>
+        </div>
+        <div class="ns-chips">
+          <button type="button" onclick="nsFecha(1)">Mañana</button>
+          <button type="button" onclick="nsFecha(3)">3 días</button>
+          <button type="button" onclick="nsFecha(7)">1 semana</button>
+          <button type="button" onclick="nsFecha(14)">2 semanas</button>
+          <button type="button" onclick="nsFecha(30)">1 mes</button>
+        </div>
+        <div class="ns-actions">
+          <button type="button" class="btn-cancel" onclick="nsSkip()">Sin nuevos pasos</button>
+          <button type="button" class="btn-save" onclick="nsSave()">Crear tarea</button>
+        </div>
       </div>
       <div id="activity-log" class="activities"></div>
       <div class="add-activity">
@@ -661,7 +738,13 @@ function saveTasks() { localStorage.setItem(TASKS_KEY, JSON.stringify(tasks)); u
 
 const TIPO_ICONS = {llamada:'📞', visita:'🚗', email:'✉️', whatsapp:'💬', otro:'📌', contacto:'🔔'};
 
-function hoyISO() { return new Date().toISOString().slice(0,10); }
+function localISO(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function hoyISO() { return localISO(new Date()); }
+function addDaysISO(n, desde) { const d = desde ? new Date(desde+'T00:00:00') : new Date(); d.setDate(d.getDate()+n); return localISO(d); }
+function esc(s) { return String(s==null?'':s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS_SEM = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+let calY = new Date().getFullYear(), calM = new Date().getMonth(), calSel = null;
 
 // Reúne items: tareas manuales pendientes + próximos contactos de las fichas
 function getAgendaItems() {
@@ -681,44 +764,78 @@ function getAgendaItems() {
   return items;
 }
 
+function agendaItemHTML(it, cls, hoy) {
+  const f = it.fecha ? it.fecha.slice(8,10)+'/'+it.fecha.slice(5,7) : '—';
+  let dias = '';
+  if(cls === 'vencida') {
+    if(it.fecha) { const n = Math.round((new Date(hoy+'T00:00:00') - new Date(it.fecha+'T00:00:00'))/864e5); dias = '<div class="agenda-late-days">hace '+n+(n===1?' día':' días')+'</div>'; }
+    else dias = '<div class="agenda-late-days">sin fecha</div>';
+  }
+  return '<div class="agenda-item '+cls+'">'
+    + '<div class="agenda-fecha">'+f+dias+'</div>'
+    + '<div style="font-size:1rem;">'+(TIPO_ICONS[it.tipo]||'📌')+'</div>'
+    + '<div class="agenda-info">'
+    +   '<div class="agenda-cliente" onclick="openModal(\''+it.clienteId+'\')">'+esc(it.cliente)+'</div>'
+    +   '<div class="agenda-texto">'+esc(it.texto)+'</div>'
+    + '</div>'
+    + '<div class="agenda-actions">'
+    +   '<button title="Marcar como hecha" onclick="completeAgendaItem(\''+it.kind+'\',\''+it.id+'\')">✓</button>'
+    +   '<button title="Posponer 7 días" onclick="postponeAgendaItem(\''+it.kind+'\',\''+it.id+'\')">⏩</button>'
+    +   (it.kind==='task' ? '<button title="Eliminar" onclick="deleteTask(\''+it.id+'\')">🗑</button>' : '')
+    + '</div></div>';
+}
+
+function calMove(n) { calM += n; if(calM < 0) { calM = 11; calY--; } if(calM > 11) { calM = 0; calY++; } renderAgenda(); }
+function calToday() { const d = new Date(); calY = d.getFullYear(); calM = d.getMonth(); calSel = hoyISO(); renderAgenda(); }
+function calSelect(iso) { calSel = iso; renderAgenda(); }
+
 function renderAgenda() {
-  const list = document.getElementById('agenda-list');
-  if(!list) return;
+  const lateEl = document.getElementById('agenda-late');
+  const grid = document.getElementById('cal-grid');
+  if(!lateEl || !grid) return;
   const items = getAgendaItems();
   const hoy = hoyISO();
-  const en7 = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
-  const groups = { vencida:[], hoy:[], semana:[], futura:[] };
-  items.forEach(it => {
-    if(!it.fecha || it.fecha < hoy) groups.vencida.push(it);
-    else if(it.fecha === hoy) groups.hoy.push(it);
-    else if(it.fecha <= en7) groups.semana.push(it);
-    else groups.futura.push(it);
-  });
-  const titles = { vencida:['🔴 Vencidas','#dc2626'], hoy:['🟠 Hoy','#ea580c'], semana:['🔵 Próximos 7 días','#2563eb'], futura:['⚪ Más adelante','var(--muted)'] };
-  let htmlOut = '';
-  Object.keys(groups).forEach(g => {
-    if(!groups[g].length) return;
-    htmlOut += '<div class="agenda-group"><div class="agenda-group-title" style="color:'+titles[g][1]+'">'+titles[g][0]+' <span class="cnt">'+groups[g].length+'</span></div>';
-    groups[g].forEach(it => {
-      const f = it.fecha ? it.fecha.slice(8,10)+'/'+it.fecha.slice(5,7) : '—';
-      htmlOut += '<div class="agenda-item '+g+'">'
-        + '<div class="agenda-fecha">'+f+'</div>'
-        + '<div style="font-size:1rem;">'+(TIPO_ICONS[it.tipo]||'📌')+'</div>'
-        + '<div class="agenda-info">'
-        +   '<div class="agenda-cliente" onclick="openModal(\''+it.clienteId+'\')">'+it.cliente+'</div>'
-        +   '<div class="agenda-texto">'+it.texto+'</div>'
-        + '</div>'
-        + '<div class="agenda-actions">'
-        +   '<button title="Marcar como hecha" onclick="completeAgendaItem(\''+it.kind+'\',\''+it.id+'\')">✓</button>'
-        +   '<button title="Posponer 7 días" onclick="postponeAgendaItem(\''+it.kind+'\',\''+it.id+'\')">⏩</button>'
-        +   (it.kind==='task' ? '<button title="Eliminar" onclick="deleteTask(\''+it.id+'\')">🗑</button>' : '')
-        + '</div></div>';
-    });
-    htmlOut += '</div>';
-  });
-  list.innerHTML = htmlOut || '<div class="agenda-empty">Sin tareas ni contactos pendientes.<br>Usa «+ Tarea» o fija «Próximo contacto» en las fichas.</div>';
-  const nUrg = groups.vencida.length + groups.hoy.length;
-  document.getElementById('agenda-resumen').textContent = items.length + ' pendientes · ' + nUrg + ' urgentes';
+  if(!calSel) calSel = hoy;
+  const late = items.filter(it => !it.fecha || it.fecha < hoy);   // ya vienen ordenadas por fecha (más antiguas primero)
+  const byDay = {};
+  items.forEach(it => { if(it.fecha) (byDay[it.fecha] = byDay[it.fecha] || []).push(it); });
+
+  // Columna aparte: retrasadas
+  lateEl.innerHTML = '<div class="agenda-group-title">🔴 Retrasadas <span class="cnt">'+late.length+'</span></div>'
+    + (late.length ? late.map(it => agendaItemHTML(it, 'vencida', hoy)).join('')
+                   : '<div class="agenda-empty">Nada retrasado 🎉</div>');
+
+  // Calendario mensual (semana empieza en lunes)
+  document.getElementById('cal-title').textContent = MESES[calM] + ' ' + calY;
+  const offset = (new Date(calY, calM, 1).getDay() + 6) % 7;
+  const diasMes = new Date(calY, calM + 1, 0).getDate();
+  const celdas = Math.ceil((offset + diasMes) / 7) * 7;
+  let h = ['L','M','X','J','V','S','D'].map(d => '<div class="cal-dow">'+d+'</div>').join('');
+  for(let i = 0; i < celdas; i++) {
+    const d = new Date(calY, calM, 1 - offset + i);
+    const iso = localISO(d);
+    const its = byDay[iso] || [];
+    const esLate = iso < hoy;
+    const cls = 'cal-cell' + (d.getMonth() !== calM ? ' out' : '') + (iso === hoy ? ' today' : '') + (iso === calSel ? ' sel' : '');
+    h += '<div class="'+cls+'" onclick="calSelect(\''+iso+'\')">'
+      + '<div class="cal-num"><span>'+d.getDate()+'</span>'+(its.length ? '<span class="cal-count'+(esLate?' late':'')+'">'+its.length+'</span>' : '')+'</div>'
+      + its.slice(0,3).map(it => '<div class="cal-chip'+(esLate?' late':'')+'" title="'+esc(it.cliente+' — '+it.texto)+'">'+(TIPO_ICONS[it.tipo]||'📌')+' '+esc((it.cliente||'').replace(/^Ayuntamiento de /,'Ayto. '))+'</div>').join('')
+      + (its.length > 3 ? '<div class="cal-more">+'+(its.length-3)+' más</div>' : '')
+      + '</div>';
+  }
+  grid.innerHTML = h;
+
+  // Detalle del día seleccionado
+  const sd = new Date(calSel + 'T00:00:00');
+  const delDia = byDay[calSel] || [];
+  const cls = calSel < hoy ? 'vencida' : (calSel === hoy ? 'hoy' : 'futura');
+  document.getElementById('cal-day').innerHTML =
+    '<div class="cal-day-title"><span>'+DIAS_SEM[sd.getDay()]+' '+sd.getDate()+' de '+MESES[sd.getMonth()]+' · '+delDia.length+(delDia.length===1?' pendiente':' pendientes')+'</span>'
+    + '<button class="nav-btn" onclick="openTaskModal(\''+calSel+'\')">+ Tarea este día</button></div>'
+    + (delDia.length ? delDia.map(it => agendaItemHTML(it, cls, hoy)).join('') : '<div class="agenda-empty">Nada programado este día.</div>');
+
+  const nHoy = (byDay[hoy] || []).length;
+  document.getElementById('agenda-resumen').textContent = items.length + ' pendientes · ' + late.length + ' retrasadas · ' + nHoy + ' hoy';
   updateAgendaBadge();
 }
 
@@ -750,7 +867,7 @@ function completeAgendaItem(kind, id) {
     save();
     // Ofrecer programar el siguiente
     if(confirm('Contacto registrado en ' + c.nombre + '.\n¿Programar próximo contacto en 7 días?')) {
-      c.siguiente = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
+      c.siguiente = addDaysISO(7);
       save();
     }
   }
@@ -758,7 +875,7 @@ function completeAgendaItem(kind, id) {
 }
 
 function postponeAgendaItem(kind, id) {
-  const nueva = new Date(Date.now() + 7*864e5).toISOString().slice(0,10);
+  const nueva = addDaysISO(7);
   if(kind === 'task') {
     const t = tasks.find(x => x.id === id); if(t) { t.fecha = nueva; saveTasks(); }
   } else {
@@ -774,11 +891,11 @@ function deleteTask(id) {
 }
 
 // Modal de nueva tarea
-function openTaskModal() {
+function openTaskModal(fecha) {
   const dl = document.getElementById('task-client-options');
   dl.innerHTML = clients.map(c => '<option value="'+(c.nombre||'').replace(/"/g,'&quot;')+'">').join('');
   document.getElementById('t-cliente').value = '';
-  document.getElementById('t-fecha').value = hoyISO();
+  document.getElementById('t-fecha').value = (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) ? fecha : hoyISO();
   document.getElementById('t-texto').value = '';
   document.getElementById('task-overlay').classList.add('open');
 }
@@ -795,10 +912,52 @@ function saveTask() {
 }
 
 // Botón rápido de interacción en la ficha
-function quickActivity(texto) {
+function quickActivity(texto, tipo) {
   const input = document.getElementById('new-activity');
   input.value = texto;
-  addActivity();
+  addActivity(tipo);
+}
+
+// ── Nuevos pasos tras registrar una actividad: crea una tarea con fecha ──
+let _nsAct = null;
+function nsHide() { _nsAct = null; const b = document.getElementById('nextsteps'); if(b) b.style.display = 'none'; }
+function openNextSteps(act, tipoActual) {
+  _nsAct = act;
+  document.getElementById('ns-ctx').textContent = '· tras: ' + act.text;
+  document.getElementById('ns-texto').value = '';
+  document.getElementById('ns-fecha').value = addDaysISO(7);
+  document.getElementById('ns-tipo').value = tipoActual === 'llamada' ? 'visita' : 'llamada';
+  const box = document.getElementById('nextsteps');
+  box.style.display = 'block';
+  box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  document.getElementById('ns-texto').focus({ preventScroll: true });
+}
+function nsFecha(dias) { document.getElementById('ns-fecha').value = addDaysISO(dias); }
+function nsSkip() { nsHide(); }
+function nsSave() {
+  if(!_nsAct) return;
+  const texto = document.getElementById('ns-texto').value.trim();
+  const fecha = document.getElementById('ns-fecha').value;
+  const tipo = document.getElementById('ns-tipo').value;
+  if(!texto) { alert('Escribe qué hay que hacer (nuevos pasos)'); document.getElementById('ns-texto').focus(); return; }
+  if(!fecha) { alert('Elige una fecha para la tarea'); return; }
+  const f = fecha.slice(8,10)+'/'+fecha.slice(5,7)+'/'+fecha.slice(0,4);
+  _nsAct.text += ' → Nuevos pasos: ' + texto + ' (' + f + ')';
+  const tmp = document.getElementById('activity-log');
+  if(editingId) {
+    const c = clients.find(x => x.id === editingId);
+    if(c) {
+      tasks.push({ id: uid(), clienteId: c.id, clienteNombre: c.nombre, fecha, tipo, texto, done: false });
+      saveTasks(); save(); renderActivityLog(c.activities || []);
+    }
+  } else {
+    // Cliente aún sin guardar: la tarea se crea al pulsar Guardar
+    tmp._pendingTasks = tmp._pendingTasks || [];
+    tmp._pendingTasks.push({ fecha, tipo, texto });
+    renderActivityLog([...(tmp._pending || [])]);
+  }
+  nsHide();
+  if(document.getElementById('view-agenda').classList.contains('active')) renderAgenda();
 }
 
 function clearFunnelFilters() {
@@ -1455,10 +1614,12 @@ function openModal(id) {
   renderActivityLog(c ? (c.activities||[]) : []);
   document.getElementById('new-activity').value = '';
   document.getElementById('activity-log')._pending = [];
+  document.getElementById('activity-log')._pendingTasks = [];
+  nsHide();
   document.getElementById('modal-overlay').classList.add('open');
   toggleSectorFields();
 }
-function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); editingId=null; }
+function closeModal() { nsHide(); document.getElementById('modal-overlay').classList.remove('open'); editingId=null; }
 function closeModalOutside(e) { if(e.target.id==='modal-overlay') closeModal(); }
 
 function renderActivityLog(acts) {
@@ -1466,13 +1627,13 @@ function renderActivityLog(acts) {
   const log = document.getElementById('activity-log');
   if(!acts.length) { log.innerHTML = `<div style="color:var(--muted);font-size:0.78rem;padding:4px 0;">Sin actividad.</div>`; return; }
   log.innerHTML = acts.slice().reverse().map(a => {
-    const key = Object.keys(icons).find(k=>a.text.toLowerCase().includes(k))||'default';
+    const key = Object.keys(icons).find(k=>a.text.split(' → ')[0].toLowerCase().includes(k))||'default';
     return `<div class="activity-item"><div class="activity-icon">${icons[key]}</div>
       <div><div class="activity-text">${a.text}</div><div class="activity-date">${a.date}</div></div></div>`;
   }).join('');
 }
 
-function addActivity() {
+function addActivity(tipo) {
   const input = document.getElementById('new-activity');
   const text = input.value.trim(); if(!text) return;
   const act = { text, date: new Date().toLocaleDateString('es-ES'), id: uid() };
@@ -1485,6 +1646,7 @@ function addActivity() {
     renderActivityLog([...(tmp._pending)]);
   }
   input.value='';
+  openNextSteps(act, typeof tipo === 'string' ? tipo : 'otro');   // pide los nuevos pasos y crea la tarea
 }
 
 function saveClient() {
@@ -1504,6 +1666,9 @@ function saveClient() {
   } else {
     data.id = uid(); data.created = new Date().toLocaleDateString('es-ES'); data.activities = pending;
     clients.push(data);
+    (document.getElementById('activity-log')._pendingTasks || []).forEach(t =>
+      tasks.push({ id: uid(), clienteId: data.id, clienteNombre: data.nombre, fecha: t.fecha, tipo: t.tipo, texto: t.texto, done: false }));
+    saveTasks();
   }
   save(); closeModal(); renderKanban(); renderTable(); renderRutas();
   if(mapInstance) refreshMapMarkers();
