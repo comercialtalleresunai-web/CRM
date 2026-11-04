@@ -1817,6 +1817,30 @@ function importDeletedSheet(wb) {
   saveDeleted();
 }
 
+// Historial de actividad por cliente: se guarda en la hoja "Actividad" para que se sincronice entre dispositivos
+function activityRows() {
+  const rows = [];
+  clients.forEach(c => (c.activities||[]).forEach(a => {
+    if(!a.id) a.id = uid();
+    rows.push([a.id, c.id||'', c.nombre||'', a.date||'', a.text||'']);
+  }));
+  return rows;
+}
+function importActivitySheet(wb) {
+  if(!wb.SheetNames.includes('Actividad')) return 0;
+  const arows = XLSX.utils.sheet_to_json(wb.Sheets['Actividad'], {header:1, defval:''});
+  let n = 0;
+  for(let i=1; i<arows.length; i++){
+    const r = arows[i]; if(!r[0] || !r[1]) continue;
+    const c = clients.find(x => x.id === r[1].toString()); if(!c) continue;
+    const id = r[0].toString(), date = (r[3]||'').toString(), text = (r[4]||'').toString();
+    c.activities = c.activities || [];
+    if(c.activities.some(a => a.id === id || (a.date === date && a.text === text))) continue;
+    c.activities.push({ id, date, text }); n++;
+  }
+  return n;
+}
+
 function importTasksSheet(wb) {
   if(!wb.SheetNames.includes('Tareas')) return 0;
   const trows = XLSX.utils.sheet_to_json(wb.Sheets['Tareas'], {header:1, defval:''});
@@ -1864,6 +1888,7 @@ function importExcel(input) {
       importDeletedSheet(wb);
       const res = mergeParsed(parsed);
       importTasksSheet(wb);
+      importActivitySheet(wb);
       save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable(); renderRutas();
       alert('\u2713 ' + res.imp + ' nuevos \u00b7 ' + res.upd + ' actualizados');
     } catch(err) { alert('Error: '+err.message); }
@@ -1906,6 +1931,8 @@ function exportExcel() {
     const tws = XLSX.utils.aoa_to_sheet([theader, ...tdata]);
     XLSX.utils.book_append_sheet(wb, tws, 'Tareas');
   }
+  const arows = activityRows();
+  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto'], ...arows]), 'Actividad');
   XLSX.writeFile(wb, `CRM_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
@@ -2270,6 +2297,8 @@ function generateXlsxBlob() {
     const tws = XLSX.utils.aoa_to_sheet([theader, ...tdata]);
     XLSX.utils.book_append_sheet(wb, tws, 'Tareas');
   }
+  const arows = activityRows();
+  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto'], ...arows]), 'Actividad');
   const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
   return new Blob([wbout], {type: XLSX_MIME});
 }
@@ -2345,6 +2374,7 @@ async function importFromDrive() {
     importDeletedSheet(wb);
     const res = mergeParsed(parsed);
     importTasksSheet(wb);
+    importActivitySheet(wb);
     save(); ensureComarcas(); populateFilters(); renderKanban(); renderTable();
     updateDriveStatus('connected', '\u2601\ufe0f Drive conectado');
     localStorage.setItem('pipecrm_db_name', 'CRM_Urdaibai.xlsx (Drive)');
