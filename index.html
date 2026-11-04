@@ -2000,22 +2000,23 @@ async function autoSaveToDrive() {
 
 function generateXlsxBlob() {
   const wb = XLSX.utils.book_new();
-  const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','',''];
-  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.'];
+  const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','','','CLASIFICACION',''];
+  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.','Sector','Comarca'];
   const data = clients.map(c => [
     c.id||'', c.nombre||'', c.empresa||'', c.nif||'', c.email||'',
     c.telefono||'', c.telefono2||'', c.cargo||'', c.web||'',
     c.direccion||'', c.poblacion||'', c.provincia||'', c.cp||'', c.pais||'',
     c.lat||'', c.lng||'', c.etapa||'', c.prioridad||'',
     c.valor||'', c.prob||'', c.origen||'', c.siguiente||'', c.notas||'',
-    c.created||'', (c.activities&&c.activities.length ? c.activities[c.activities.length-1].date : '')
+    c.created||'', (c.activities&&c.activities.length ? c.activities[c.activities.length-1].date : ''),
+    c.sector||'', c.comarca||''
   ]);
   const ws = XLSX.utils.aoa_to_sheet([section, header, ...data]);
   ws['!merges'] = [
     {s:{r:0,c:0},e:{r:0,c:8}}, {s:{r:0,c:9},e:{r:0,c:15}},
-    {s:{r:0,c:16},e:{r:0,c:21}}, {s:{r:0,c:22},e:{r:0,c:24}}
+    {s:{r:0,c:16},e:{r:0,c:21}}, {s:{r:0,c:22},e:{r:0,c:24}}, {s:{r:0,c:25},e:{r:0,c:26}}
   ];
-  ws['!cols'] = header.map((_,i) => ({wch:[6,26,26,14,26,14,14,16,24,30,16,12,8,8,11,11,12,10,12,9,14,14,35,12,12][i]||14}));
+  ws['!cols'] = header.map((_,i) => ({wch:[6,26,26,14,26,14,14,16,24,30,16,12,8,8,11,11,12,10,12,9,14,14,35,12,12,18,18][i]||14}));
   XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
   if(typeof deletedIds !== 'undefined' && deletedIds.length) {
     const dws = XLSX.utils.aoa_to_sheet([['ID'], ...deletedIds.map(id => [id])]);
