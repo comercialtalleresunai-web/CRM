@@ -1406,8 +1406,9 @@ function refreshMapMarkers() {
   const mfl = (document.getElementById('map-filter-municipio')||{value:''}).value;
   const mfcSel2 = document.getElementById('map-filter-comarca');
   const mfcArr2 = mfcSel2 ? [...mfcSel2.selectedOptions].map(o=>o.value).filter(Boolean) : [];
-  const prio = getPrioMap();
-  const pc = document.getElementById('prio-count'); if(pc) pc.textContent = '(' + prio.size + ')';
+  const prioAll = getPrioMap();
+  const pc = document.getElementById('prio-count'); if(pc) pc.textContent = '(' + prioAll.size + ')';
+  const prio = mapPrioOnly ? prioAll : new Map();   // con el botón apagado no se marca ninguna prioridad
   const applyMapFilters = arr => arr.filter(c => {
     if(!mapSearchMatch(c)) return false;
     if(mapPrioOnly && !prio.has(c.id)) return false;
@@ -1586,7 +1587,7 @@ function renderRutas() {
   // Order: selected (in order) → unselected → excluded
   const selectedIds = [...rutaSelected];
   const inRutaList  = selectedIds.map(id => clients.find(c=>c.id===id)).filter(Boolean);
-  const prioM = getPrioMap();
+  const prioM = mapPrioOnly ? getPrioMap() : new Map();   // botón apagado: sin marcas ni orden de prioridad
   const notSelected = visible.filter(c => !rutaSelected.has(c.id) && !rutaExcluded.has(c.id))
     .sort((a,b) => (prioM.has(b.id)?1:0) - (prioM.has(a.id)?1:0) || (prioM.has(a.id) ? prioM.get(a.id).fecha.localeCompare(prioM.get(b.id).fecha) : 0));
   const excluded    = visible.filter(c => rutaExcluded.has(c.id));
