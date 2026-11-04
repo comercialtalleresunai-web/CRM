@@ -560,6 +560,11 @@
       <div class="form-grid full">
         <div class="form-group"><textarea class="form-area" id="f-notas"></textarea></div>
       </div>
+      <div id="fact-box" style="display:none">
+        <hr class="section-sep">
+        <p class="section-label">Facturación por año</p>
+        <div id="fact-table"></div>
+      </div>
       <hr class="section-sep">
       <p class="section-label">Actividad</p>
       <div class="quick-acts">
@@ -1671,6 +1676,28 @@ function toggleSectorFields() {
     (sec === 'Alojamiento' || (!sec && tieneDatos)) ? '' : 'none';
 }
 
+// Facturación por año (importes facturados, guardados como {"2025": 1234.5, ...})
+function factToStr(f) {
+  if(!f || typeof f !== 'object') return '';
+  return Object.keys(f).sort().map(y => y + ':' + Math.round(f[y]*100)/100).join(';');
+}
+function fmtEur(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' €'; }
+function renderFactBox(c) {
+  const box = document.getElementById('fact-box'), tb = document.getElementById('fact-table');
+  const f = c && c.facturacion; const years = f ? Object.keys(f).sort() : [];
+  if(!years.length) { box.style.display = 'none'; tb.innerHTML = ''; return; }
+  const max = Math.max(...years.map(y => Math.abs(f[y])), 1), cur = String(new Date().getFullYear());
+  const total = years.reduce((a, y) => a + f[y], 0);
+  tb.innerHTML = '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:0.8rem;">'
+    + years.map(y => '<div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--border);' + (y===cur ? 'background:#fff7ed;font-weight:700;' : '') + '">'
+      + '<span style="width:42px;font-family:var(--mono);">' + y + '</span>'
+      + '<span style="flex:1;height:8px;background:var(--card);border-radius:4px;overflow:hidden;"><span style="display:block;height:100%;width:' + Math.max(2, Math.round(Math.abs(f[y])/max*100)) + '%;background:' + (y===cur ? '#ea580c' : '#94a3b8') + ';"></span></span>'
+      + '<span style="width:84px;text-align:right;font-family:var(--mono);">' + fmtEur(f[y]) + '</span></div>').join('')
+    + '<div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--card);font-weight:700;"><span>Total</span><span style="font-family:var(--mono);">' + fmtEur(total) + '</span></div></div>'
+    + '<div style="font-size:0.68rem;color:var(--muted);margin-top:4px;">Importes de facturas/albaranes del ERP.</div>';
+  box.style.display = '';
+}
+
 function openModal(id) {
   editingId = id || null;
   const c = id ? clients.find(x=>x.id===id) : null;
@@ -1681,6 +1708,7 @@ function openModal(id) {
     if(el) el.value = c ? (c[f]||'') : (f==='etapa'?'lead':f==='prioridad'?'media':'');
   });
   renderActivityLog(c ? (c.activities||[]) : []);
+  renderFactBox(c);
   document.getElementById('new-activity').value = '';
   document.getElementById('activity-log')._pending = [];
   document.getElementById('activity-log')._pendingTasks = [];
@@ -1767,7 +1795,7 @@ const HEADER_MAP = {
   'prob':'prob','origen':'origen','proxcontacto':'siguiente','proximocontacto':'siguiente',
   'notas':'notas','alta':'created','ultact':'_la','sector':'sector','comarca':'comarca',
   'tipodeestablecimiento':'tipo_alojamiento','tipoestablecimiento':'tipo_alojamiento',
-  'capacidad':'capacidad','categoria':'categoria'
+  'capacidad':'capacidad','categoria':'categoria','facturacionporano':'facturacion'
 };
 function parseSheetRows(rows) {
   let headerRow = -1;
@@ -1794,6 +1822,10 @@ function parseSheetRows(rows) {
       obj[k] = (v===null||v===undefined) ? '' : v.toString().trim();
     });
     if(!obj.nombre) continue;
+    if('facturacion' in obj) {
+      const fo = {}; String(obj.facturacion||'').split(';').forEach(p => { const kv = p.split(':'); const v = parseFloat(kv[1]); if(kv[0] && !isNaN(v)) fo[kv[0].trim()] = v; });
+      if(Object.keys(fo).length) obj.facturacion = fo; else delete obj.facturacion;
+    }
     obj.lat = parseFloat(obj.lat)||null; obj.lng = parseFloat(obj.lng)||null;
     obj.valor = parseFloat(obj.valor)||null; obj.prob = parseInt(obj.prob)||null;
     let et = (obj.etapa||'').toLowerCase().trim();
@@ -1900,23 +1932,23 @@ function importExcel(input) {
 // Hoja "Clientes": Sector y Comarca van justo detrás de Empresa (columnas D y E)
 // para que se vean en el móvil sin tener que desplazarse hasta la columna Z.
 function clientesSheet(header, data) {
-  const ord = [0,1,2,25,26,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24];
+  const ord = [0,1,2,25,26,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,27];
   const hdr = ord.map(i => header[i]);
   const rows = data.map(r => ord.map(i => r[i] === undefined ? '' : r[i]));
   const section = new Array(ord.length).fill('');
-  const groups = [['IDENTIFICACIÓN',0,10],['LOCALIZACIÓN',11,17],['PIPELINE',18,23],['OBSERVACIONES',24,26]];
+  const groups = [['IDENTIFICACIÓN',0,10],['LOCALIZACIÓN',11,17],['PIPELINE',18,23],['OBSERVACIONES',24,27]];
   groups.forEach(g => { section[g[1]] = g[0]; });
   const ws = XLSX.utils.aoa_to_sheet([section, hdr, ...rows]);
   ws['!merges'] = groups.map(g => ({s:{r:0,c:g[1]},e:{r:0,c:g[2]}}));
-  ws['!cols'] = hdr.map((_,i) => ({wch:[6,26,26,18,18,14,26,14,14,16,24,30,16,12,8,8,11,11,12,10,12,9,14,14,35,12,12][i]||14}));
+  ws['!cols'] = hdr.map((_,i) => ({wch:[6,26,26,18,18,14,26,14,14,16,24,30,16,12,8,8,11,11,12,10,12,9,14,14,35,12,12,36][i]||14}));
   return ws;
 }
 
 function exportExcel() {
   const wb = XLSX.utils.book_new();
   const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','','','CLASIFICACION',''];
-  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.','Sector','Comarca'];
-  const data = clients.map(c => [c.id||'',c.nombre||'',c.empresa||'',c.nif||'',c.email||'',c.telefono||'',c.telefono2||'',c.cargo||'',c.web||'',c.direccion||'',c.poblacion||'',c.provincia||'',c.cp||'',c.pais||'',c.lat||'',c.lng||'',c.etapa||'',c.prioridad||'',c.valor||'',c.prob||'',c.origen||'',c.siguiente||'',c.notas||'',c.created||'',(c.activities&&c.activities.length?c.activities[c.activities.length-1].date:''),c.sector||'',c.comarca||'']);
+  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.','Sector','Comarca','Facturación por año'];
+  const data = clients.map(c => [c.id||'',c.nombre||'',c.empresa||'',c.nif||'',c.email||'',c.telefono||'',c.telefono2||'',c.cargo||'',c.web||'',c.direccion||'',c.poblacion||'',c.provincia||'',c.cp||'',c.pais||'',c.lat||'',c.lng||'',c.etapa||'',c.prioridad||'',c.valor||'',c.prob||'',c.origen||'',c.siguiente||'',c.notas||'',c.created||'',(c.activities&&c.activities.length?c.activities[c.activities.length-1].date:''),c.sector||'',c.comarca||'',factToStr(c.facturacion)]);
   const ws = clientesSheet(header, data);
   XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
   // Hoja de eliminados (propaga borrados entre dispositivos)
@@ -2275,7 +2307,7 @@ async function autoSaveToDrive() {
 function generateXlsxBlob() {
   const wb = XLSX.utils.book_new();
   const section = ['IDENTIFICACIÓN','','','','','','','','','LOCALIZACIÓN','','','','','','','PIPELINE','','','','','','OBSERVACIONES','','','CLASIFICACION',''];
-  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.','Sector','Comarca'];
+  const header = ['ID','Nombre','Empresa','NIF/DNI','Email','Teléfono 1','Teléfono 2','Cargo','Web','Dirección','Población','Provincia','CP','País','Latitud','Longitud','Etapa','Prioridad','Valor (€)','Prob (%)','Origen','Próx.Contacto','Notas','Alta','Últ.Act.','Sector','Comarca','Facturación por año'];
   const data = clients.map(c => [
     c.id||'', c.nombre||'', c.empresa||'', c.nif||'', c.email||'',
     c.telefono||'', c.telefono2||'', c.cargo||'', c.web||'',
@@ -2283,7 +2315,7 @@ function generateXlsxBlob() {
     c.lat||'', c.lng||'', c.etapa||'', c.prioridad||'',
     c.valor||'', c.prob||'', c.origen||'', c.siguiente||'', c.notas||'',
     c.created||'', (c.activities&&c.activities.length ? c.activities[c.activities.length-1].date : ''),
-    c.sector||'', c.comarca||''
+    c.sector||'', c.comarca||'', factToStr(c.facturacion)
   ]);
   const ws = clientesSheet(header, data);
   XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
