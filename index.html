@@ -22,7 +22,7 @@
     --ink: #1a1a1a; --ink-soft: #555; --muted: #888;
     --accent: #2563eb; --accent-soft: #dbeafe;
     --lead: #16a34a; --contacto: #ca8a04; --propuesta: #ea580c;
-    --negociacion: #7c3aed; --cerrado: #059669; --perdido: #dc2626;
+    --negociacion: #7c3aed; --cerrado: #ff1a1a; --perdido: #111111;
     --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -102,8 +102,8 @@
   .badge-contacto { background: #fef3c7; color: #92400e; }
   .badge-propuesta { background: #fed7aa; color: #9a3412; }
   .badge-negociacion { background: #ede9fe; color: #6b21a8; }
-  .badge-cerrado { background: #d1fae5; color: #065f46; }
-  .badge-perdido { background: #fee2e2; color: #991b1b; }
+  .badge-cerrado { background: #ff1a1a; color: #fff; }
+  .badge-perdido { background: #111; color: #fff; }
   .ruta-container { display: grid; grid-template-columns: 1fr 280px; gap: 12px; height: calc(100vh - 160px); min-height: 500px; }
   .ruta-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
   .ruta-panel-header { padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 2; flex-shrink: 0; }
@@ -164,11 +164,11 @@
   .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; background: var(--card); border-radius: 0 0 12px 12px; }
   .btn-cancel { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--font); font-size: 0.82rem; cursor: pointer; }
   .btn-save { padding: 8px 22px; border-radius: 6px; border: none; background: var(--accent); color: var(--surface); font-family: var(--font); font-size: 0.82rem; font-weight: 700; cursor: pointer; }
-  .btn-danger { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--perdido); background: var(--surface); color: var(--perdido); font-family: var(--font); font-size: 0.82rem; cursor: pointer; margin-right: auto; }
+  .btn-danger { padding: 8px 18px; border-radius: 6px; border: 1px solid #dc2626; background: var(--surface); color: #dc2626; font-family: var(--font); font-size: 0.82rem; cursor: pointer; margin-right: auto; }
   .capture-step { margin-bottom: 16px; }
   .capture-drop { display: block; border: 2px dashed var(--border); border-radius: 10px; padding: 30px 20px; text-align: center; cursor: pointer; background: var(--card); }
   .capture-drop:hover { border-color: var(--accent); background: var(--accent-soft); }
-  .capture-drop.has-file { border-color: var(--cerrado); background: #d1fae5; }
+  .capture-drop.has-file { border-color: #059669; background: #d1fae5; }
   .capture-preview { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 10px; }
   .capture-notes-input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font-family: var(--font); font-size: 0.88rem; outline: none; min-height: 80px; resize: vertical; }
   .ai-key-section { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.82rem; }
@@ -688,7 +688,7 @@ let editingId = null;
 let capturePhoto = null;
 const stages = ['lead','contacto','propuesta','negociacion','cerrado','perdido'];
 const stageLabels = {lead:'Lead',contacto:'Contacto',propuesta:'Propuesta',negociacion:'Negociación',cerrado:'Cerrado',perdido:'Perdido'};
-const stageColors = {lead:'#16a34a',contacto:'#ca8a04',propuesta:'#ea580c',negociacion:'#7c3aed',cerrado:'#059669',perdido:'#dc2626'};
+const stageColors = {lead:'#16a34a',contacto:'#ca8a04',propuesta:'#ea580c',negociacion:'#7c3aed',cerrado:'#ff1a1a',perdido:'#111111'};
 
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(clients));
@@ -1936,7 +1936,7 @@ function handlePhoto(input) {
   const reader = new FileReader();
   reader.onload = e => {
     capturePhoto = e.target.result;
-    document.getElementById('capture-drop-content').innerHTML = `<img src="${capturePhoto}" class="capture-preview"><div style="margin-top:8px;font-size:0.82rem;color:var(--cerrado)">✓ Foto lista — toca para cambiar</div>`;
+    document.getElementById('capture-drop-content').innerHTML = `<img src="${capturePhoto}" class="capture-preview"><div style="margin-top:8px;font-size:0.82rem;color:#059669">✓ Foto lista — toca para cambiar</div>`;
     document.getElementById('capture-drop-label').classList.add('has-file');
   };
   reader.readAsDataURL(file);
