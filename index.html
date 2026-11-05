@@ -1707,6 +1707,7 @@ function openModal(id) {
     const el = document.getElementById('f-'+f);
     if(el) el.value = c ? (c[f]||'') : (f==='etapa'?'lead':f==='prioridad'?'media':'');
   });
+  document.getElementById('activity-log')._editing = null;
   renderActivityLog(c ? (c.activities||[]) : []);
   renderFactBox(c);
   document.getElementById('new-activity').value = '';
@@ -1720,14 +1721,64 @@ function closeModal() { nsHide(); document.getElementById('modal-overlay').class
 function closeModalOutside(e) { if(e.target.id==='modal-overlay') closeModal(); }
 
 function renderActivityLog(acts) {
-  const icons = {llamada:'📞',reunión:'🤝',reunion:'🤝',email:'✉️',visita:'🚗',default:'📌'};
+  const icons = {llamada:'📞',reunión:'🤝',reunion:'🤝',email:'✉️',visita:'🚗',whatsapp:'💬',default:'📌'};
   const log = document.getElementById('activity-log');
   if(!acts.length) { log.innerHTML = `<div style="color:var(--muted);font-size:0.78rem;padding:4px 0;">Sin actividad.</div>`; return; }
+  acts.forEach(a => { if(!a.id) a.id = uid(); });
   log.innerHTML = acts.slice().reverse().map(a => {
     const key = Object.keys(icons).find(k=>a.text.split(' → ')[0].toLowerCase().includes(k))||'default';
+    if(log._editing === a.id) {
+      return `<div class="activity-item" style="flex-direction:column;gap:6px;background:var(--card);padding:8px;border-radius:8px;">
+        <textarea id="act-edit-text" class="form-area" style="min-height:60px;">${esc(a.text)}</textarea>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input type="date" id="act-edit-date" style="width:auto;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:0.8rem;" value="${actDateToISO(a.date)}">
+          <span style="flex:1"></span>
+          <button class="btn-cancel" onclick="cancelActivityEdit()">Cancelar</button>
+          <button class="btn-save" onclick="saveActivityEdit('${a.id}')">Guardar</button>
+        </div></div>`;
+    }
     return `<div class="activity-item"><div class="activity-icon">${icons[key]}</div>
-      <div><div class="activity-text">${a.text}</div><div class="activity-date">${a.date}</div></div></div>`;
+      <div style="flex:1;min-width:0;"><div class="activity-text">${esc(a.text)}</div><div class="activity-date">${esc(a.date)}</div></div>
+      <div style="display:flex;gap:2px;flex-shrink:0;align-items:flex-start;">
+        <button title="Editar" onclick="editActivity('${a.id}')" style="border:none;background:none;cursor:pointer;font-size:0.8rem;padding:2px 4px;">✏️</button>
+        <button title="Eliminar" onclick="deleteActivity('${a.id}')" style="border:none;background:none;cursor:pointer;font-size:0.8rem;padding:2px 4px;">🗑</button>
+      </div></div>`;
   }).join('');
+}
+
+// Edición de visitas/acciones del historial de la ficha
+function actDateToISO(d) {
+  const m = (d||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0') : '';
+}
+function actISOToDate(iso) {
+  const m = (iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? (+m[3])+'/'+(+m[2])+'/'+m[1] : '';
+}
+function actDateKey(d) { return actDateToISO(d) || '0000'; }
+function getActList() {
+  if(editingId) { const c = clients.find(x => x.id === editingId); if(c) { c.activities = c.activities || []; return c.activities; } }
+  const log = document.getElementById('activity-log'); log._pending = log._pending || []; return log._pending;
+}
+function editActivity(id) { document.getElementById('activity-log')._editing = id; renderActivityLog(getActList()); }
+function cancelActivityEdit() { document.getElementById('activity-log')._editing = null; renderActivityLog(getActList()); }
+function saveActivityEdit(id) {
+  const list = getActList(), a = list.find(x => x.id === id); if(!a) return;
+  const text = document.getElementById('act-edit-text').value.trim();
+  if(!text) { alert('El texto no puede estar vacío'); return; }
+  const nd = actISOToDate(document.getElementById('act-edit-date').value);
+  a.text = text; if(nd) a.date = nd;
+  list.sort((x, y) => actDateKey(x.date).localeCompare(actDateKey(y.date)));   // estable: mantiene el orden dentro del mismo día
+  document.getElementById('activity-log')._editing = null;
+  if(editingId) save();
+  renderActivityLog(list);
+}
+function deleteActivity(id) {
+  if(!confirm('¿Eliminar esta actividad?')) return;
+  const list = getActList(), i = list.findIndex(x => x.id === id); if(i < 0) return;
+  const removed = list.splice(i, 1)[0];
+  if(editingId) { addActTomb(removed.id, editingId); save(); }
+  renderActivityLog(list);
 }
 
 function addActivity(tipo) {
@@ -1850,24 +1901,40 @@ function importDeletedSheet(wb) {
 }
 
 // Historial de actividad por cliente: se guarda en la hoja "Actividad" para que se sincronice entre dispositivos
+function getActTombs() { try { return JSON.parse(localStorage.getItem('pipecrm_act_tombs')||'[]'); } catch(e) { return []; } }
+function addActTomb(id, cid) {
+  const t = getActTombs(); if(t.some(x => x.id === id)) return;
+  t.push({id, c: cid||''}); try { localStorage.setItem('pipecrm_act_tombs', JSON.stringify(t)); } catch(e) {}
+}
 function activityRows() {
   const rows = [];
   clients.forEach(c => (c.activities||[]).forEach(a => {
     if(!a.id) a.id = uid();
-    rows.push([a.id, c.id||'', c.nombre||'', a.date||'', a.text||'']);
+    rows.push([a.id, c.id||'', c.nombre||'', a.date||'', a.text||'', '']);
   }));
+  getActTombs().forEach(t => rows.push([t.id, t.c, '', '', '', 'SI']));   // actividades eliminadas: se propagan a otros dispositivos
   return rows;
 }
 function importActivitySheet(wb) {
   if(!wb.SheetNames.includes('Actividad')) return 0;
   const arows = XLSX.utils.sheet_to_json(wb.Sheets['Actividad'], {header:1, defval:''});
+  const tombs = new Set(getActTombs().map(t => t.id));
   let n = 0;
   for(let i=1; i<arows.length; i++){
-    const r = arows[i]; if(!r[0] || !r[1]) continue;
-    const c = clients.find(x => x.id === r[1].toString()); if(!c) continue;
-    const id = r[0].toString(), date = (r[3]||'').toString(), text = (r[4]||'').toString();
+    const r = arows[i]; if(!r[0]) continue;
+    const id = r[0].toString(), cid = (r[1]||'').toString();
+    if((r[5]||'').toString().toUpperCase() === 'SI') {          // eliminada en otro dispositivo
+      addActTomb(id, cid); tombs.add(id);
+      clients.forEach(c => { if(c.activities) c.activities = c.activities.filter(a => a.id !== id); });
+      continue;
+    }
+    if(!cid || tombs.has(id)) continue;
+    const c = clients.find(x => x.id === cid); if(!c) continue;
+    const date = (r[3]||'').toString(), text = (r[4]||'').toString();
     c.activities = c.activities || [];
-    if(c.activities.some(a => a.id === id || (a.date === date && a.text === text))) continue;
+    const ex = c.activities.find(a => a.id === id);
+    if(ex) { ex.date = date; ex.text = text; continue; }            // editada: gana lo que hay en Drive
+    if(c.activities.some(a => a.date === date && a.text === text)) continue;
     c.activities.push({ id, date, text }); n++;
   }
   return n;
@@ -1964,7 +2031,7 @@ function exportExcel() {
     XLSX.utils.book_append_sheet(wb, tws, 'Tareas');
   }
   const arows = activityRows();
-  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto'], ...arows]), 'Actividad');
+  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto','Eliminada'], ...arows]), 'Actividad');
   XLSX.writeFile(wb, `CRM_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
@@ -2330,7 +2397,7 @@ function generateXlsxBlob() {
     XLSX.utils.book_append_sheet(wb, tws, 'Tareas');
   }
   const arows = activityRows();
-  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto'], ...arows]), 'Actividad');
+  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto','Eliminada'], ...arows]), 'Actividad');
   const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
   return new Blob([wbout], {type: XLSX_MIME});
 }
