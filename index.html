@@ -12,7 +12,6 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>CRM Urdaibai — Pipeline, Rutas & Captura</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -292,15 +291,9 @@
   </div>
   <div class="nav-actions">
     <span id="db-indicator" style="font-size:0.68rem;color:var(--muted);font-family:var(--mono);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="Base de datos activa"></span>
-    <div id="unsaved-dot" title="Cambios sin guardar en Drive"></div>
     <div id="sb-status-badge" class="drive-status disconnected" onclick="sbClick()" title="Pulsa para sincronizar (Mayús+clic = cerrar sesión)"><span>🔒 Iniciar sesión</span></div>
-    <div id="drive-status-badge" class="drive-status disconnected" style="cursor:pointer;" onclick="handleDriveConnect()" title="Conectar con Google Drive">
-      <span id="drive-status-icon">☁️</span>
-      <span id="drive-status-text">Conectar Drive</span>
-    </div>
     <button class="nav-btn capture" onclick="openCapture()">📸 Capturar</button>
     <label class="nav-btn">📥 Importar<input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
-    <button class="nav-btn" onclick="importFromDrive()" title="Cargar datos desde Google Drive">☁️ Desde Drive</button>
     <button class="nav-btn" onclick="exportExcel()">📤 Exportar</button>
     <button class="nav-btn primary" onclick="openModal()">+ Nuevo</button>
   </div>
@@ -701,9 +694,6 @@ const stageColors = {lead:'#16a34a',contacto:'#ca8a04',propuesta:'#ea580c',negoc
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(clients));
   markUnsaved();
-  // Debounce: esperar 800ms tras el último cambio antes de subir a Drive
-  clearTimeout(save._driveTimer);
-  save._driveTimer = setTimeout(() => autoSaveToDrive(), 800);
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -2507,7 +2497,6 @@ ensureComarcas();
 populateFilters();
 updateDbIndicator();
 renderKanban();
-initDrive();
 
 // Registrar Service Worker (PWA)
 if ('serviceWorker' in navigator) {
