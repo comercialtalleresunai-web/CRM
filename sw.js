@@ -1,4 +1,4 @@
-const CACHE = 'crm-urdaibai-v2';
+const CACHE = 'crm-urdaibai-v3';
 const ASSETS = [
   './manifest.json',
   './icon-192.png',
