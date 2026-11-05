@@ -574,7 +574,9 @@
         <button onclick="quickActivity('💬 WhatsApp enviado','whatsapp')">💬 WhatsApp</button>
       </div>
       <div id="nextsteps" class="nextsteps" style="display:none">
-        <div class="nextsteps-title">➡️ Nuevos pasos <small id="ns-ctx"></small></div>
+        <div class="nextsteps-title">📝 Reporte y ➡️ nuevos pasos <small id="ns-ctx"></small></div>
+        <div class="form-group" style="margin-bottom:8px;"><label>📝 Reporte (qué ha pasado: resultado, con quién has hablado, interés…)</label>
+          <textarea class="form-area" id="ns-reporte" style="min-height:58px;" placeholder="Ej: Hablé con el jefe de brigada; interesados en desbrozadora, sin presupuesto este año"></textarea></div>
         <div class="ns-row">
           <div class="form-group"><label>¿Qué hay que hacer?</label><input type="text" id="ns-texto" placeholder="Ej: enviar presupuesto Avant 528" onkeydown="if(event.key==='Enter'){event.preventDefault();nsSave();}"></div>
           <div class="form-group"><label>Fecha</label><input type="date" id="ns-fecha"></div>
@@ -594,8 +596,8 @@
           <button type="button" onclick="nsFecha(30)">1 mes</button>
         </div>
         <div class="ns-actions">
-          <button type="button" class="btn-cancel" onclick="nsSkip()">Sin nuevos pasos</button>
-          <button type="button" class="btn-save" onclick="nsSave()">Crear tarea</button>
+          <button type="button" class="btn-cancel" onclick="nsSkip()">Guardar sin tarea</button>
+          <button type="button" class="btn-save" onclick="nsSave()">Guardar y crear tarea</button>
         </div>
       </div>
       <div id="activity-log" class="activities"></div>
@@ -936,16 +938,26 @@ function nsHide() { _nsAct = null; const b = document.getElementById('nextsteps'
 function openNextSteps(act, tipoActual) {
   _nsAct = act;
   document.getElementById('ns-ctx').textContent = '· tras: ' + act.text;
+  document.getElementById('ns-reporte').value = '';
   document.getElementById('ns-texto').value = '';
   document.getElementById('ns-fecha').value = addDaysISO(7);
   document.getElementById('ns-tipo').value = tipoActual === 'llamada' ? 'visita' : 'llamada';
   const box = document.getElementById('nextsteps');
   box.style.display = 'block';
   box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  document.getElementById('ns-texto').focus({ preventScroll: true });
+  document.getElementById('ns-reporte').focus({ preventScroll: true });
 }
 function nsFecha(dias) { document.getElementById('ns-fecha').value = addDaysISO(dias); }
-function nsSkip() { nsHide(); }
+function nsApplyReport() {
+  const rep = (document.getElementById('ns-reporte').value || '').trim();
+  if(_nsAct && rep) _nsAct.report = rep;
+}
+function nsSkip() {
+  nsApplyReport();
+  if(editingId) save();
+  renderActivityLog(getActList());
+  nsHide();
+}
 function nsSave() {
   if(!_nsAct) return;
   const texto = document.getElementById('ns-texto').value.trim();
@@ -954,6 +966,7 @@ function nsSave() {
   if(!texto) { alert('Escribe qué hay que hacer (nuevos pasos)'); document.getElementById('ns-texto').focus(); return; }
   if(!fecha) { alert('Elige una fecha para la tarea'); return; }
   const f = fecha.slice(8,10)+'/'+fecha.slice(5,7)+'/'+fecha.slice(0,4);
+  nsApplyReport();
   _nsAct.text += ' → Nuevos pasos: ' + texto + ' (' + f + ')';
   const tmp = document.getElementById('activity-log');
   if(editingId) {
@@ -1730,6 +1743,7 @@ function renderActivityLog(acts) {
     if(log._editing === a.id) {
       return `<div class="activity-item" style="flex-direction:column;gap:6px;background:var(--card);padding:8px;border-radius:8px;">
         <textarea id="act-edit-text" class="form-area" style="min-height:60px;">${esc(a.text)}</textarea>
+        <textarea id="act-edit-report" class="form-area" style="min-height:60px;" placeholder="📝 Reporte (opcional)">${esc(a.report||'')}</textarea>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <input type="date" id="act-edit-date" style="width:auto;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:0.8rem;" value="${actDateToISO(a.date)}">
           <span style="flex:1"></span>
@@ -1738,7 +1752,7 @@ function renderActivityLog(acts) {
         </div></div>`;
     }
     return `<div class="activity-item"><div class="activity-icon">${icons[key]}</div>
-      <div style="flex:1;min-width:0;"><div class="activity-text">${esc(a.text)}</div><div class="activity-date">${esc(a.date)}</div></div>
+      <div style="flex:1;min-width:0;"><div class="activity-text">${esc(a.text)}</div>${a.report ? '<div style="margin-top:4px;padding:5px 8px;border-left:3px solid #94a3b8;background:var(--card);border-radius:0 6px 6px 0;font-size:0.76rem;white-space:pre-wrap;">📝 ' + esc(a.report) + '</div>' : ''}<div class="activity-date">${esc(a.date)}</div></div>
       <div style="display:flex;gap:2px;flex-shrink:0;align-items:flex-start;">
         <button title="Editar" onclick="editActivity('${a.id}')" style="border:none;background:none;cursor:pointer;font-size:0.8rem;padding:2px 4px;">✏️</button>
         <button title="Eliminar" onclick="deleteActivity('${a.id}')" style="border:none;background:none;cursor:pointer;font-size:0.8rem;padding:2px 4px;">🗑</button>
@@ -1768,6 +1782,7 @@ function saveActivityEdit(id) {
   if(!text) { alert('El texto no puede estar vacío'); return; }
   const nd = actISOToDate(document.getElementById('act-edit-date').value);
   a.text = text; if(nd) a.date = nd;
+  const rp = document.getElementById('act-edit-report').value.trim(); if(rp) a.report = rp; else delete a.report;
   list.sort((x, y) => actDateKey(x.date).localeCompare(actDateKey(y.date)));   // estable: mantiene el orden dentro del mismo día
   document.getElementById('activity-log')._editing = null;
   if(editingId) save();
@@ -1910,9 +1925,9 @@ function activityRows() {
   const rows = [];
   clients.forEach(c => (c.activities||[]).forEach(a => {
     if(!a.id) a.id = uid();
-    rows.push([a.id, c.id||'', c.nombre||'', a.date||'', a.text||'', '']);
+    rows.push([a.id, c.id||'', c.nombre||'', a.date||'', a.text||'', '', a.report||'']);
   }));
-  getActTombs().forEach(t => rows.push([t.id, t.c, '', '', '', 'SI']));   // actividades eliminadas: se propagan a otros dispositivos
+  getActTombs().forEach(t => rows.push([t.id, t.c, '', '', '', 'SI', '']));   // actividades eliminadas: se propagan a otros dispositivos
   return rows;
 }
 function importActivitySheet(wb) {
@@ -1933,9 +1948,10 @@ function importActivitySheet(wb) {
     const date = (r[3]||'').toString(), text = (r[4]||'').toString();
     c.activities = c.activities || [];
     const ex = c.activities.find(a => a.id === id);
-    if(ex) { ex.date = date; ex.text = text; continue; }            // editada: gana lo que hay en Drive
+    const report = (r[6]||'').toString();
+    if(ex) { ex.date = date; ex.text = text; if(report) ex.report = report; else delete ex.report; continue; }            // editada: gana lo que hay en Drive
     if(c.activities.some(a => a.date === date && a.text === text)) continue;
-    c.activities.push({ id, date, text }); n++;
+    const na = { id, date, text }; if(report) na.report = report; c.activities.push(na); n++;
   }
   return n;
 }
@@ -2031,7 +2047,7 @@ function exportExcel() {
     XLSX.utils.book_append_sheet(wb, tws, 'Tareas');
   }
   const arows = activityRows();
-  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto','Eliminada'], ...arows]), 'Actividad');
+  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto','Eliminada','Reporte'], ...arows]), 'Actividad');
   XLSX.writeFile(wb, `CRM_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
@@ -2397,7 +2413,7 @@ function generateXlsxBlob() {
     XLSX.utils.book_append_sheet(wb, tws, 'Tareas');
   }
   const arows = activityRows();
-  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto','Eliminada'], ...arows]), 'Actividad');
+  if(arows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ID','ClienteID','Cliente','Fecha','Texto','Eliminada','Reporte'], ...arows]), 'Actividad');
   const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
   return new Blob([wbout], {type: XLSX_MIME});
 }
