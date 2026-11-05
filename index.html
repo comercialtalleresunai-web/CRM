@@ -293,6 +293,7 @@
   <div class="nav-actions">
     <span id="db-indicator" style="font-size:0.68rem;color:var(--muted);font-family:var(--mono);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="Base de datos activa"></span>
     <div id="unsaved-dot" title="Cambios sin guardar en Drive"></div>
+    <div id="sb-status-badge" class="drive-status disconnected" onclick="sbClick()" title="Pulsa para sincronizar (Mayús+clic = cerrar sesión)"><span>🔒 Iniciar sesión</span></div>
     <div id="drive-status-badge" class="drive-status disconnected" style="cursor:pointer;" onclick="handleDriveConnect()" title="Conectar con Google Drive">
       <span id="drive-status-icon">☁️</span>
       <span id="drive-status-text">Conectar Drive</span>
@@ -2516,6 +2517,174 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.log('SW error:', err));
   });
 }
+</script>
+<!-- ══════════ BASE DE DATOS (Supabase) ══════════ -->
+<style>
+  #sb-login{position:fixed;inset:0;background:var(--bg,#fff);z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;}
+  #sb-login .box{width:100%;max-width:340px;background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:12px;padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.12);font-family:var(--font,sans-serif);}
+  #sb-login h2{margin:0 0 4px;font-size:1.1rem;} #sb-login p{margin:0 0 14px;font-size:.8rem;color:var(--muted,#666);}
+  #sb-login input{width:100%;box-sizing:border-box;padding:10px;margin-bottom:10px;border:1px solid var(--border,#ccc);border-radius:8px;font-size:16px;}
+  #sb-login button{width:100%;padding:11px;border:0;border-radius:8px;background:var(--accent,#16a34a);color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;}
+  #sb-err{color:#b91c1c;font-size:.78rem;min-height:1em;margin-top:8px;}
+  #sb-status-badge{cursor:pointer;}
+</style>
+<div id="sb-login"><div class="box">
+  <h2>CRM Urdaibai</h2><p>Inicia sesión para entrar a la base de datos.</p>
+  <input id="sb-email" type="email" placeholder="Email" autocomplete="username">
+  <input id="sb-pass" type="password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')sbLogin()">
+  <button onclick="sbLogin()">Entrar</button><div id="sb-err"></div>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+const SB_URL='https://kmtbhyvfsnrrtggxknhl.supabase.co';
+const SB_KEY='sb_publishable_BMVFkk4Kf8vrOvANe2k4CA_zA4PliE6';
+const SBS_KEY='pipecrm_sb_synced';
+let sb=null, user=null, busy=false, again=false, timer=null, chan=null;
+let st; try{ st=JSON.parse(localStorage.getItem(SBS_KEY)||'null'); }catch(e){}
+if(!st||typeof st!=='object') st={c:{},t:{},last:{c:null,t:null},init:false};
+st.last=st.last||{c:null,t:null};
+function persist(){ try{ localStorage.setItem(SBS_KEY,JSON.stringify(st)); }catch(e){} }
+function stable(o){ if(o===null||typeof o!=='object') return JSON.stringify(o); if(Array.isArray(o)) return '['+o.map(stable).join(',')+']';
+  return '{'+Object.keys(o).filter(k=>o[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+stable(o[k])).join(',')+'}'; }
+function hash(o){ const s=stable(o); let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))|0; return h+':'+s.length; }
+function badge(kind,msg){
+  const el=document.getElementById('sb-status-badge'); if(!el) return;
+  const map={ok:['connected','🗄️ Base de datos'],sync:['syncing','🗄️ Sincronizando…'],err:['disconnected','⚠️ Sin sincronizar'],off:['disconnected','🔒 Iniciar sesión']};
+  const m=map[kind]||map.off; el.className='drive-status '+m[0]; el.querySelector('span').textContent=m[1]; el.title=msg||'Pulsa para sincronizar ahora';
+}
+function rerender(){
+  try{ updateAgendaBadge(); }catch(e){}
+  try{ renderKanban(); }catch(e){}
+  const v=document.querySelector('.view.active'); const id=v&&v.id;
+  try{ if(id==='view-clientes') renderTable(); if(id==='view-agenda') renderAgenda(); if(id==='view-rutas'&&typeof renderRutas==='function') renderRutas(); }catch(e){}
+  try{ populateFilters(); }catch(e){}
+}
+async function fetchAll(table,since){
+  let out=[], from=0;
+  for(;;){
+    let q=sb.from(table).select('id,data,deleted,updated_at').order('updated_at',{ascending:true}).order('id',{ascending:true}).range(from,from+999);
+    if(since) q=q.gte('updated_at',since);
+    const {data,error}=await q; if(error) throw error;
+    out=out.concat(data); if(data.length<1000) break; from+=1000;
+  }
+  return out;
+}
+function applyPull(rows,arr,map,isClient){
+  let changed=false;
+  const idx=new Map(arr.map((x,i)=>[x.id,i]));
+  const rm=new Set();
+  rows.forEach(r=>{
+    const i=idx.get(r.id), local=i===undefined?null:arr[i];
+    if(local && hash(local)!==map[r.id]) return; // cambio local sin subir: gana lo local
+    if(!local && map[r.id]!==undefined && !r.deleted) return; // borrado local pendiente de subir: gana lo local
+    if(r.deleted){
+      if(local){ rm.add(r.id); changed=true; if(isClient&&typeof deletedIds!=='undefined'&&!deletedIds.includes(r.id)) deletedIds.push(r.id); }
+      delete map[r.id]; return;
+    }
+    const d=r.data; if(!d||typeof d!=='object') return;
+    d.id=r.id;
+    if(local){ if(hash(local)===hash(d)){ map[r.id]=hash(d); return; } arr[i]=d; } else { arr.push(d); idx.set(r.id,arr.length-1); }
+    map[r.id]=hash(d); changed=true;
+  });
+  if(rm.size){ for(let k=arr.length-1;k>=0;k--) if(rm.has(arr[k].id)) arr.splice(k,1); }
+  return changed;
+}
+async function pull(){
+  let ch=false;
+  const rc=await fetchAll('crm_clients',st.last.c);
+  const rt=await fetchAll('crm_tasks',st.last.t);
+  if(rc.length){ ch=applyPull(rc,clients,st.c,true)||ch; st.last.c=rc[rc.length-1].updated_at; }
+  if(rt.length){ ch=applyPull(rt,tasks,st.t,false)||ch; st.last.t=rt[rt.length-1].updated_at; }
+  if(ch){
+    localStorage.setItem(STORE_KEY,JSON.stringify(clients)); localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));
+    try{ saveDeleted(); }catch(e){}
+    rerender();
+  }
+}
+async function pushTable(table,arr,map){
+  const ids=new Set(arr.map(x=>x.id));
+  const changed=arr.filter(x=>x.id&&map[x.id]!==hash(x));
+  const removed=Object.keys(map).filter(id=>!ids.has(id));
+  if(removed.length>20 && removed.length>0.3*Math.max(1,Object.keys(map).length)){
+    if(!confirm('Se van a borrar '+removed.length+' registros de la base de datos (de '+table+'). ¿Seguro?\nCancelar = no borrar y restaurarlos desde la base de datos.')){
+      st.last[table==='crm_clients'?'c':'t']=null; Object.keys(map).forEach(k=>{ if(!ids.has(k)) delete map[k]; }); persist(); return 'resync';
+    }
+  }
+  for(let i=0;i<changed.length;i+=200){
+    const batch=changed.slice(i,i+200).map(x=>({id:x.id,data:x,deleted:false}));
+    const {error}=await sb.from(table).upsert(batch,{onConflict:'id'}); if(error) throw error;
+    changed.slice(i,i+200).forEach(x=>{ map[x.id]=hash(x); });
+  }
+  for(let i=0;i<removed.length;i+=200){
+    const part=removed.slice(i,i+200);
+    const {error}=await sb.from(table).update({deleted:true}).in('id',part); if(error) throw error;
+    part.forEach(id=>delete map[id]);
+  }
+  return changed.length+removed.length;
+}
+async function firstJoin(){
+  if(st.init) return;
+  const {count,error}=await sb.from('crm_clients').select('id',{count:'exact',head:true}); if(error) throw error;
+  if(count>0 && Object.keys(st.c).length===0 && clients.length){
+    try{ localStorage.setItem('pipecrm_backup_prejoin',JSON.stringify({clients,tasks,at:new Date().toISOString()})); }catch(e){}
+    clients.length=0; tasks.length=0; // la base de datos manda en un dispositivo nuevo
+  }
+  st.init=true; persist();
+}
+async function sync(){
+  if(!sb||!user) return;
+  if(busy){ again=true; return; }
+  busy=true; badge('sync');
+  try{
+    await firstJoin();
+    await pull();
+    let r1=await pushTable('crm_clients',clients,st.c);
+    let r2=await pushTable('crm_tasks',tasks,st.t);
+    if(r1==='resync'||r2==='resync'){ await pull(); }
+    persist(); badge('ok','Sincronizado '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){ console.error('sync',e); badge('err',String(e.message||e)); }
+  finally{ busy=false; if(again){ again=false; soon(300); } }
+}
+function soon(ms){ clearTimeout(timer); timer=setTimeout(sync,ms||800); }
+function subscribe(){
+  if(chan) return;
+  chan=sb.channel('crm-live')
+   .on('postgres_changes',{event:'*',schema:'public',table:'crm_clients'},()=>soon(500))
+   .on('postgres_changes',{event:'*',schema:'public',table:'crm_tasks'},()=>soon(500))
+   .subscribe();
+}
+function showLogin(msg){ const l=document.getElementById('sb-login'); l.style.display='flex'; document.getElementById('sb-err').textContent=msg||''; badge('off'); }
+async function onSession(session){
+  user=session&&session.user||null;
+  if(!user){ showLogin(); return; }
+  document.getElementById('sb-login').style.display='none';
+  subscribe(); sync();
+}
+window.sbLogin=async function(){
+  const email=document.getElementById('sb-email').value.trim(), password=document.getElementById('sb-pass').value;
+  document.getElementById('sb-err').textContent='Entrando…';
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error){ document.getElementById('sb-err').textContent='Email o contraseña incorrectos'; return; }
+  document.getElementById('sb-pass').value=''; onSession(data.session);
+};
+window.sbClick=async function(){
+  if(!user){ showLogin(); return; }
+  if(event&&event.shiftKey){ if(confirm('¿Cerrar sesión en este dispositivo?')){ await sb.auth.signOut(); } return; }
+  sync();
+};
+window.sbSyncNow=sync;
+// Enganchar los guardados existentes
+const _save=window.save; window.save=function(){ const r=_save.apply(this,arguments); if(user) soon(); return r; };
+const _saveTasks=window.saveTasks; window.saveTasks=function(){ const r=_saveTasks.apply(this,arguments); if(user) soon(); return r; };
+window.addEventListener('online',()=>soon(300));
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&user) soon(300); });
+if(window.supabase){
+  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+  sb.auth.onAuthStateChange((ev,session)=>{ if(ev==='SIGNED_OUT'){ user=null; if(chan){ sb.removeChannel(chan); chan=null; } showLogin(); } });
+  sb.auth.getSession().then(({data})=>onSession(data.session));
+}else{ badge('err','No se pudo cargar la librería de la base de datos'); }
+})();
 </script>
 </body>
 </html>
